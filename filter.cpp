@@ -126,35 +126,60 @@ int magnitude(cv::Mat& sx, cv::Mat& sy, cv::Mat& dst) {
 	return 0;
 }
 
-
-int main() {
-
-	// const std::string image_path = cv::samples::findFile("starry_night.jpg");
-	const std::string image_path = "my_image.jpg";
-	cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
-
-	if (img.empty()) {
-		std::cout << "Couldn't read the image" << image_path << std::endl;
-		return 1;
+int quantize(cv::Mat& src, cv::Mat& dst, int levels) {
+	uchar b = 255 / levels;
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			cv::Vec3b s = src.at<cv::Vec3b>(i, j);
+			cv::Vec3b d;
+			for (int t = 0; t < 3; ++t) { d[t] = (s[t] / b) * b; }
+			dst.at<cv::Vec3b>(i, j) = d;
+		}
 	}
-
-
-	// cv::resize(img, img, cv::Size(10, 10));
-	cv::Mat modified(img.rows, img.cols, CV_16SC3);
-
-	cv::Mat sx(img.rows, img.cols, CV_16SC3);
-	cv::Mat sy(img.rows, img.cols, CV_16SC3);
-	sobolX3x3(img, sx);
-	sobolY3x3(img, sy);
-	magnitude(sx, sy, modified);
-	cv::abs(modified);
-	modified.convertTo(modified, CV_8UC3);
-
-	cv::imshow("modified", modified);
-
-	while (true) {
-		auto k = cv::waitKey(0);
-		if (k == 'q') { return 0; }
-		if (k == 's') { cv::imwrite("sobelgrad.jpg", modified); }
-	}
+	return 0;
 }
+
+int blurQuantize(cv::Mat& src, cv::Mat& dst, int levels) {
+	cv::Mat blurred(src.rows, src.cols, CV_16SC3);
+	blur5x5(src, blurred);
+	// now quantize every channel
+	quantize(blurred, dst, levels);
+	return 0;
+}
+
+
+// int main() {
+//
+// 	// const std::string image_path = cv::samples::findFile("starry_night.jpg");
+// 	const std::string image_path = "my_image.jpg";
+// 	cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
+//
+// 	if (img.empty()) {
+// 		std::cout << "Couldn't read the image" << image_path << std::endl;
+// 		return 1;
+// 	}
+//
+//
+// 	// cv::resize(img, img, cv::Size(10, 10));
+// 	// cv::Mat modified(img.rows, img.cols, CV_16SC3);
+//
+// 	cv::Mat modified(img.rows, img.cols, CV_8UC3);
+//
+// 	// cv::Mat sx(img.rows, img.cols, CV_16SC3);
+// 	// cv::Mat sy(img.rows, img.cols, CV_16SC3);
+// 	// sobolX3x3(img, sx);
+// 	// sobolY3x3(img, sy);
+// 	// magnitude(sx, sy, modified);
+// 	// cv::abs(modified);
+// 	// modified.convertTo(modified, CV_8UC3);
+//
+// 	blurQuantize(img, modified, 15);
+//
+// 	cv::imshow("modified", modified);
+//
+// 	while (true) {
+// 		auto k = cv::waitKey(0);
+// 		if (k == 'q') { return 0; }
+// 		if (k == 's') { cv::imwrite("blurquantize_15.jpg", modified); }
+// 	}
+// }
