@@ -147,6 +147,34 @@ int blurQuantize(cv::Mat& src, cv::Mat& dst, int levels) {
 	return 0;
 }
 
+int threshold(cv::Mat& src, cv::Mat& sg, cv::Mat& dst, int magThreshold) {
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			cv::Vec3b s = sg.at<cv::Vec3b>(i, j);
+			cv::Vec3b d;
+			int mag = 0;
+			for (int t = 0; t < 3; ++t) { mag += s[t]; }
+			if (mag / 3 > magThreshold) { d = cv::Vec3b(0, 0, 0); }
+			else { d = src.at<cv::Vec3b>(i, j); }
+			dst.at<cv::Vec3b>(i, j) = d;
+		}
+	}
+	return 0;
+}
+
+int cartoon(cv::Mat& src, cv::Mat& dst, int levels, int magThreshold) {
+	cv::Mat sx(src.rows, src.cols, CV_16SC3);
+	cv::Mat sy(src.rows, src.cols, CV_16SC3);
+	sobolX3x3(src, sx);
+	sobolY3x3(src, sy);
+	cv::Mat sg(src.rows, src.cols, CV_8UC3);
+	magnitude(sx, sy, sg);
+	cv::Mat temp(src.rows, src.cols, CV_8UC3);
+	blurQuantize(src, temp, levels);
+	threshold(temp, sg, dst, magThreshold);
+	return 0;
+}
+
 
 // int main() {
 //
@@ -173,13 +201,15 @@ int blurQuantize(cv::Mat& src, cv::Mat& dst, int levels) {
 // 	// cv::abs(modified);
 // 	// modified.convertTo(modified, CV_8UC3);
 //
-// 	blurQuantize(img, modified, 15);
+// 	// blurQuantize(img, modified, 15);
+//
+// 	cartoon(img, modified, 15, 20);
 //
 // 	cv::imshow("modified", modified);
 //
 // 	while (true) {
 // 		auto k = cv::waitKey(0);
 // 		if (k == 'q') { return 0; }
-// 		if (k == 's') { cv::imwrite("blurquantize_15.jpg", modified); }
+// 		if (k == 's') { cv::imwrite("cartoon.jpg", modified); }
 // 	}
 // }

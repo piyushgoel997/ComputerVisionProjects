@@ -12,3 +12,7 @@ int magnitude(cv::Mat& sx, cv::Mat& sy, cv::Mat& dst);
 int quantize(cv::Mat& src, cv::Mat& dst, int levels);
 
 int blurQuantize(cv::Mat& src, cv::Mat& dst, int levels);
+
+int threshold(cv::Mat& src, cv::Mat& dst, int magThreshold);
+
+int cartoon(cv::Mat& src, cv::Mat& dst, int levels, int magThreshold);

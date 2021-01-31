@@ -23,7 +23,7 @@ int main() {
 	int scNum = 0;
 
 	bool greyscale = false, mirrored = false, blur = false, sobelx = false, sobely = false, sobelgrad = false, bq15 =
-		     false;
+		     false, cartonize = false;
 
 	while (true) {
 		*capDev >> frame;
@@ -82,6 +82,12 @@ int main() {
 			tempFrame.convertTo(frame, CV_8UC3);
 		}
 
+		if (cartonize) {
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
+			cartoon(frame, tempFrame, 15, 20);
+			tempFrame.convertTo(frame, CV_8UC3);			
+		}
+
 		cv::imshow("video", frame);
 		auto k = cv::waitKey(1); // why does setting this to zero doesn't work?
 		if (k == 'q') { break; }
@@ -96,6 +102,7 @@ int main() {
 		if (k == 'y') { sobely = !sobely; }
 		if (k == 'm') { sobelgrad = ! sobelgrad; }
 		if (k == 'l') { bq15 = !bq15; }
+		if (k == 'c') { cartonize = !cartonize; }
 	}
 
 	delete capDev;
