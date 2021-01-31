@@ -18,3 +18,5 @@ int threshold(cv::Mat& src, cv::Mat& dst, int magThreshold);
 int cartoon(cv::Mat& src, cv::Mat& dst, int levels, int magThreshold);
 
 int negative(cv::Mat& src, cv::Mat& dst, bool mask[]);
+
+int adjustBrightnessContrast(cv::Mat& src, cv::Mat& dst, double contrast, double brightness);

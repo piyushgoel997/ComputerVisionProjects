@@ -24,6 +24,7 @@ int main() {
 
 	bool greyscale = false, mirrored = false, blur = false, sobelx = false, sobely = false, sobelgrad = false, bq15 =
 		     false, cartonize = false, neg = false;
+	double brightness = 0, contrast = 1;
 
 	while (true) {
 		*capDev >> frame;
@@ -85,13 +86,19 @@ int main() {
 		if (cartonize) {
 			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
 			cartoon(frame, tempFrame, 15, 20);
-			tempFrame.convertTo(frame, CV_8UC3);			
+			tempFrame.convertTo(frame, CV_8UC3);
 		}
 
 		if (neg) {
 			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
 			bool mask[] = {true, true, true};
 			negative(frame, tempFrame, mask);
+			tempFrame.convertTo(frame, CV_8UC3);
+		}
+
+		if (contrast != 1 || brightness != 0) {
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
+			adjustBrightnessContrast(frame, tempFrame, contrast, brightness);
 			tempFrame.convertTo(frame, CV_8UC3);
 		}
 
@@ -111,6 +118,10 @@ int main() {
 		if (k == 'l') { bq15 = !bq15; }
 		if (k == 'c') { cartonize = !cartonize; }
 		if (k == 'n') { neg = !neg; }
+		if (k == '1') { contrast -= 0.1; }
+		if (k == '2') { contrast += 0.1; }
+		if (k == '3') { brightness -= 10; }
+		if (k == '4') { brightness += 10; }
 	}
 
 	delete capDev;
