@@ -117,14 +117,10 @@ int sobolY3x3(cv::Mat& src, cv::Mat& dst) {
 	return 0;
 }
 
-int sobol3x3Gradient(cv::Mat& src, cv::Mat& dst) {
-	cv::Mat x(src.rows, src.cols, CV_16SC3);
-	cv::Mat y(src.rows, src.cols, CV_16SC3);
-	sobolX3x3(src, x);
-	sobolY3x3(src, y);
-	x.convertTo(x, CV_64FC3);
-	y.convertTo(y, CV_64FC3);
-	cv::Mat prod = x.mul(x) + y.mul(y);
+int magnitude(cv::Mat& sx, cv::Mat& sy, cv::Mat& dst) {
+	sx.convertTo(sx, CV_64FC3);
+	sy.convertTo(sy, CV_64FC3);
+	cv::Mat prod = sx.mul(sx) + sy.mul(sy);
 	cv::pow(prod, 0.5, dst);
 	dst.convertTo(dst, CV_8UC3);
 	return 0;
@@ -146,8 +142,11 @@ int main() {
 	// cv::resize(img, img, cv::Size(10, 10));
 	cv::Mat modified(img.rows, img.cols, CV_16SC3);
 
-	// blur5x5(img, blurred);
-	sobol3x3Gradient(img, modified);
+	cv::Mat sx(img.rows, img.cols, CV_16SC3);
+	cv::Mat sy(img.rows, img.cols, CV_16SC3);
+	sobolX3x3(img, sx);
+	sobolY3x3(img, sy);
+	magnitude(sx, sy, modified);
 	cv::abs(modified);
 	modified.convertTo(modified, CV_8UC3);
 

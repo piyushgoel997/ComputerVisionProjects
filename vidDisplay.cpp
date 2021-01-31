@@ -22,7 +22,7 @@ int main() {
 	cv::Mat frame;
 	int scNum = 0;
 
-	bool greyscale = false, mirrored = false, blur = false, sobelx = false, sobely = false;
+	bool greyscale = false, mirrored = false, blur = false, sobelx = false, sobely = false, sobelgrad = false;
 
 	while (true) {
 		*capDev >> frame;
@@ -65,6 +65,16 @@ int main() {
 			tempFrame.convertTo(frame, CV_8UC3);
 		}
 
+		if (sobelgrad) {
+			cv::Mat x(frame.rows, frame.cols, CV_16SC3);
+			sobolX3x3(frame, x);
+			cv::Mat y(frame.rows, frame.cols, CV_16SC3);
+			sobolY3x3(frame, y);
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_16SC3);
+			magnitude(x, y, tempFrame);
+			tempFrame.convertTo(frame, CV_8UC3);
+		}
+
 		cv::imshow("video", frame);
 		auto k = cv::waitKey(1); // why does setting this to zero doesn't work?
 		if (k == 'q') { break; }
@@ -77,7 +87,7 @@ int main() {
 		if (k == 'b') { blur = !blur; }
 		if (k == 'x') { sobelx = !sobelx; }
 		if (k == 'y') { sobely = !sobely; }
-
+		if (k == 'm') { sobelgrad = ! sobelgrad; }
 	}
 
 	delete capDev;
