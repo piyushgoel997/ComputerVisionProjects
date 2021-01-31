@@ -195,15 +195,61 @@ int adjustBrightnessContrast(cv::Mat& src, cv::Mat& dst, double contrast, double
 		for (int j = 0; j < src.cols; ++j) {
 			cv::Vec3b s = src.at<cv::Vec3b>(i, j);
 			cv::Vec3b d;
-			for (int t = 0; t < 3; ++t) {
-				d[t] = cv::saturate_cast<uchar>(contrast * s[t] + brightness);
-			}
+			for (int t = 0; t < 3; ++t) { d[t] = cv::saturate_cast<uchar>(contrast * s[t] + brightness); }
 			dst.at<cv::Vec3b>(i, j) = d;
 		}
 	}
 	return 0;
 }
 
+int laplacian(cv::Mat& src, cv::Mat& dst) {
+	cv::Mat filter(3, 3, CV_16SC1, -1);
+	filter.at<short>(0, 0) = 0;
+	filter.at<short>(0, 2) = 0;
+	filter.at<short>(2, 0) = 0;
+	filter.at<short>(2, 2) = 0;
+	filter.at<short>(1, 1) = 4;
+	cv::Mat s;
+	src.convertTo(s, CV_16SC3);
+	convolve(s, filter, dst);
+	dst.convertTo(dst, CV_8UC3);
+	return 0;
+}
+
+int combine(cv::Mat& src, cv::Mat& other, cv::Mat& dst, double ratio) {
+	// ratio of the other image to mix
+	assert(ratio >=0);
+	assert(ratio <=1);
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			cv::Vec3b s = src.at<cv::Vec3b>(i, j);
+			cv::Vec3b o = other.at<cv::Vec3b>(i, j);
+			cv::Vec3b d;
+			for (int t = 0; t < 3; ++t) { d[t] = (1 - ratio) * s[t] + ratio * o[t]; }
+			dst.at<cv::Vec3b>(i, j) = d;
+		}
+	}
+	return 0;
+}
+
+int sepia(cv::Mat& src, cv::Mat& dst) {
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			cv::Vec3b s = src.at<cv::Vec3b>(i, j);
+			cv::Vec3b d;
+			d[0] = cv::saturate_cast<uchar>((s[0] * .131) + (s[2] * .272) + (s[1] * .534));
+			d[2] = cv::saturate_cast<uchar>((s[0] * .189) + (s[2] * .393) + (s[1] * .769));
+			d[1] = cv::saturate_cast<uchar>((s[0] * .168) + (s[2] * .349) + (s[1] * .686));
+			dst.at<cv::Vec3b>(i, j) = d;
+		}
+	}
+	return 0;
+}
+
+int greyscale(cv::Mat& src, cv::Mat& dst) {
+	cv::cvtColor(src, dst, cv::COLOR_BGR2GRAY);
+	return 0;
+}
 
 // int main() {
 //
@@ -237,14 +283,19 @@ int adjustBrightnessContrast(cv::Mat& src, cv::Mat& dst, double contrast, double
 // 	// bool mask[] = {true, true, true};
 // 	// negative(img, modified, mask);
 //
-// 	adjustBrightnessContrast(img, modified, 3.0, -100);
-// 	
+// 	// adjustBrightnessContrast(img, modified, 3.0, -100);
 //
+// 	// laplacian(img, modified);
+//
+// 	greyscale(img, modified);
+//
+// 	
+// 	
 // 	cv::imshow("modified", modified);
 //
 // 	while (true) {
 // 		auto k = cv::waitKey(0);
 // 		if (k == 'q') { return 0; }
-// 		if (k == 's') { cv::imwrite("contrast3brightness-100.jpg", modified); }
+// 		if (k == 's') { cv::imwrite("greyscale.jpg", modified); }
 // 	}
 // }

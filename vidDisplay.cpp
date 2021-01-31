@@ -13,6 +13,8 @@ int main() {
 		return -1;
 	}
 
+	cv::Mat other = cv::imread("my_image.jpg", cv::IMREAD_COLOR);
+
 	// constructor initialization, what does this exactly do? What's the normal way of doing this?
 	cv::Size refS((int)capDev->get(cv::CAP_PROP_FRAME_WIDTH), (int)capDev->get(cv::CAP_PROP_FRAME_HEIGHT));
 
@@ -22,9 +24,10 @@ int main() {
 	cv::Mat frame;
 	int scNum = 0;
 
-	bool greyscale = false, mirrored = false, blur = false, sobelx = false, sobely = false, sobelgrad = false, bq15 =
-		     false, cartonize = false, neg = false;
-	double brightness = 0, contrast = 1;
+	bool grey = false, mirrored = false, blur = false, sobelx = false, sobely = false, sobelgrad = false, bq15 = false,
+	     cartonize = false, neg = false, lap = false, sep = false;
+	double brightness = 0, contrast = 1, ratio = 0.0;
+	// can't use grey with all.
 
 	while (true) {
 		*capDev >> frame;
@@ -35,9 +38,9 @@ int main() {
 			break;
 		}
 
-		if (greyscale) {
-			cv::Mat tempFrame;
-			cv::cvtColor(frame, tempFrame, cv::COLOR_BGR2GRAY);
+		if (grey) {
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
+			greyscale(frame, tempFrame);
 			frame = tempFrame.clone();
 		}
 
@@ -102,6 +105,24 @@ int main() {
 			tempFrame.convertTo(frame, CV_8UC3);
 		}
 
+		if (lap) {
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_16SC3);
+			laplacian(frame, tempFrame);
+			tempFrame.convertTo(frame, CV_8UC3);
+		}
+
+		if (ratio != 0) {
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
+			combine(frame, other, tempFrame, ratio);
+			tempFrame.convertTo(frame, CV_8UC3);
+		}
+
+		if (sep) {
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
+			sepia(frame, tempFrame);
+			frame = tempFrame.clone();
+		}
+
 		cv::imshow("video", frame);
 		auto k = cv::waitKey(1); // why does setting this to zero doesn't work?
 		if (k == 'q') { break; }
@@ -109,7 +130,7 @@ int main() {
 			cv::imwrite("screencapture_" + std::to_string(scNum) + ".jpg", frame);
 			scNum++;
 		}
-		if (k == 'g') { greyscale = !greyscale; }
+		if (k == 'g') { grey = !grey; }
 		if (k == 'f') { mirrored = !mirrored; }
 		if (k == 'b') { blur = !blur; }
 		if (k == 'x') { sobelx = !sobelx; }
@@ -122,6 +143,10 @@ int main() {
 		if (k == '2') { contrast += 0.1; }
 		if (k == '3') { brightness -= 10; }
 		if (k == '4') { brightness += 10; }
+		if (k == 'p') { lap = !lap; }
+		if (k == '5') { ratio = MAX(0, ratio-0.1); }
+		if (k == '6') { ratio = MIN(1, ratio + 0.1); }
+		if (k == 'e') { sep = !sep; }
 	}
 
 	delete capDev;

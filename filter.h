@@ -1,5 +1,6 @@
 #include <opencv2/core/mat.hpp>
 
+int greyscale(cv::Mat& src, cv::Mat& dst);
 
 int blur5x5(cv::Mat& src, cv::Mat& dst);
 
@@ -19,4 +20,12 @@ int cartoon(cv::Mat& src, cv::Mat& dst, int levels, int magThreshold);
 
 int negative(cv::Mat& src, cv::Mat& dst, bool mask[]);
 
+// extension
+
 int adjustBrightnessContrast(cv::Mat& src, cv::Mat& dst, double contrast, double brightness);
+
+int laplacian(cv::Mat& src, cv::Mat& dst);
+
+int combine(cv::Mat& src, cv::Mat& other, cv::Mat& dst, double ratio);
+
+int sepia(cv::Mat& src, cv::Mat& dst);
