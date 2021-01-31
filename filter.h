@@ -16,3 +16,5 @@ int blurQuantize(cv::Mat& src, cv::Mat& dst, int levels);
 int threshold(cv::Mat& src, cv::Mat& dst, int magThreshold);
 
 int cartoon(cv::Mat& src, cv::Mat& dst, int levels, int magThreshold);
+
+int negative(cv::Mat& src, cv::Mat& dst, bool mask[]);

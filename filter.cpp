@@ -175,41 +175,60 @@ int cartoon(cv::Mat& src, cv::Mat& dst, int levels, int magThreshold) {
 	return 0;
 }
 
+int negative(cv::Mat& src, cv::Mat& dst, bool mask[]) {
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			cv::Vec3b s = src.at<cv::Vec3b>(i, j);
+			cv::Vec3b d;
+			for (int t = 0; t < 3; ++t) {
+				if (mask[t]) { d[t] = 255 - s[t]; }
+				else { d[t] = s[t]; }
+			}
+			dst.at<cv::Vec3b>(i, j) = d;
+		}
+	}
+	return 0;
+}
 
-// int main() {
-//
-// 	// const std::string image_path = cv::samples::findFile("starry_night.jpg");
-// 	const std::string image_path = "my_image.jpg";
-// 	cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
-//
-// 	if (img.empty()) {
-// 		std::cout << "Couldn't read the image" << image_path << std::endl;
-// 		return 1;
-// 	}
-//
-//
-// 	// cv::resize(img, img, cv::Size(10, 10));
-// 	// cv::Mat modified(img.rows, img.cols, CV_16SC3);
-//
-// 	cv::Mat modified(img.rows, img.cols, CV_8UC3);
-//
-// 	// cv::Mat sx(img.rows, img.cols, CV_16SC3);
-// 	// cv::Mat sy(img.rows, img.cols, CV_16SC3);
-// 	// sobolX3x3(img, sx);
-// 	// sobolY3x3(img, sy);
-// 	// magnitude(sx, sy, modified);
-// 	// cv::abs(modified);
-// 	// modified.convertTo(modified, CV_8UC3);
-//
-// 	// blurQuantize(img, modified, 15);
-//
-// 	cartoon(img, modified, 15, 20);
-//
-// 	cv::imshow("modified", modified);
-//
-// 	while (true) {
-// 		auto k = cv::waitKey(0);
-// 		if (k == 'q') { return 0; }
-// 		if (k == 's') { cv::imwrite("cartoon.jpg", modified); }
-// 	}
-// }
+
+int main() {
+
+	// const std::string image_path = cv::samples::findFile("starry_night.jpg");
+	const std::string image_path = "my_image.jpg";
+	cv::Mat img = cv::imread(image_path, cv::IMREAD_COLOR);
+
+	if (img.empty()) {
+		std::cout << "Couldn't read the image" << image_path << std::endl;
+		return 1;
+	}
+
+
+	// cv::resize(img, img, cv::Size(10, 10));
+	// cv::Mat modified(img.rows, img.cols, CV_16SC3);
+
+	cv::Mat modified(img.rows, img.cols, CV_8UC3);
+
+	// cv::Mat sx(img.rows, img.cols, CV_16SC3);
+	// cv::Mat sy(img.rows, img.cols, CV_16SC3);
+	// sobolX3x3(img, sx);
+	// sobolY3x3(img, sy);
+	// magnitude(sx, sy, modified);
+	// cv::abs(modified);
+	// modified.convertTo(modified, CV_8UC3);
+
+	// blurQuantize(img, modified, 15);
+
+	// cartoon(img, modified, 15, 20);
+
+	bool mask[] = {true, true, true};
+	negative(img, modified, mask);
+	
+
+	cv::imshow("modified", modified);
+
+	while (true) {
+		auto k = cv::waitKey(0);
+		if (k == 'q') { return 0; }
+		if (k == 's') { cv::imwrite("negative.jpg", modified); }
+	}
+}
