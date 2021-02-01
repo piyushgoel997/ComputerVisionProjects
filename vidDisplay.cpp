@@ -1,7 +1,6 @@
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
 
 #include "filter.h"
 
@@ -25,7 +24,7 @@ int main() {
 	int scNum = 0;
 
 	bool grey = false, mirrored = false, blur = false, sobelx = false, sobely = false, sobelgrad = false, bq15 = false,
-	     cartonize = false, neg = false, lap = false, sep = false;
+	     cartonize = false, neg = false, lap = false, sep = false, updwn = false, cw = false, acw = false;
 	double brightness = 0, contrast = 1, ratio = 0.0;
 	// can't use grey with all.
 
@@ -41,13 +40,7 @@ int main() {
 		if (grey) {
 			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
 			greyscale(frame, tempFrame);
-			frame = tempFrame.clone();
-		}
-
-		if (mirrored) {
-			cv::Mat tempFrame;
-			cv::flip(frame, tempFrame, 1);
-			frame = tempFrame.clone();
+			tempFrame.convertTo(frame, CV_8UC3);
 		}
 
 		if (blur) {
@@ -123,6 +116,30 @@ int main() {
 			frame = tempFrame.clone();
 		}
 
+		if (updwn) {
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
+			upsideDown(frame, tempFrame);
+			frame = tempFrame.clone();
+		}
+
+		if (mirrored) {
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
+			mirror(frame, tempFrame);
+			frame = tempFrame.clone();
+		}
+
+		if (cw) {
+			cv::Mat tempFrame(frame.cols, frame.rows, CV_8UC3);
+			rotateCW(frame, tempFrame);
+			frame = tempFrame.clone();
+		}
+
+		if (acw) {
+			cv::Mat tempFrame(frame.cols, frame.rows, CV_8UC3);
+			rotateACW(frame, tempFrame);
+			frame = tempFrame.clone();
+		}
+
 		cv::imshow("video", frame);
 		auto k = cv::waitKey(1); // why does setting this to zero doesn't work?
 		if (k == 'q') { break; }
@@ -139,14 +156,17 @@ int main() {
 		if (k == 'l') { bq15 = !bq15; }
 		if (k == 'c') { cartonize = !cartonize; }
 		if (k == 'n') { neg = !neg; }
-		if (k == '1') { contrast -= 0.1; }
-		if (k == '2') { contrast += 0.1; }
-		if (k == '3') { brightness -= 10; }
-		if (k == '4') { brightness += 10; }
+		if (k == '1') { contrast = MAX(0, contrast-0.1); }
+		if (k == '2') { contrast = MIN(4, contrast+0.1); }
+		if (k == '3') { brightness = MAX(-260, brightness-10); }
+		if (k == '4') { brightness = MIN(260, brightness+10); }
 		if (k == 'p') { lap = !lap; }
 		if (k == '5') { ratio = MAX(0, ratio-0.1); }
 		if (k == '6') { ratio = MIN(1, ratio + 0.1); }
 		if (k == 'e') { sep = !sep; }
+		if (k == 'u') { updwn = !updwn; }
+		if (k == 'a') { acw = !acw; }
+		if (k == 'w') { cw = !cw; }
 	}
 
 	delete capDev;

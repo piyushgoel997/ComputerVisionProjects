@@ -142,14 +142,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="filter.cpp" />
     <ClCompile Include="imgDisplay.cpp" />
     <ClCompile Include="vidDisplay.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="my_image.jpg" />
+    <None Include=".gitignore" />
   </ItemGroup>
   <ItemGroup>
-    <None Include=".gitignore" />
+    <ClInclude Include="filter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

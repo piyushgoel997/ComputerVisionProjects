@@ -251,6 +251,36 @@ int greyscale(cv::Mat& src, cv::Mat& dst) {
 	return 0;
 }
 
+int rotateACW(cv::Mat& src, cv::Mat& dst) {
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) { dst.at<cv::Vec3b>(src.cols - 1 - j, i) = src.at<cv::Vec3b>(i, j); }
+	}
+	return 0;
+}
+
+int rotateCW(cv::Mat& src, cv::Mat& dst) {
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) { dst.at<cv::Vec3b>(j, src.rows - 1 - i) = src.at<cv::Vec3b>(i, j); }
+	}
+	return 0;
+}
+
+int upsideDown(cv::Mat& src, cv::Mat& dst) {
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) { dst.at<cv::Vec3b>(src.rows - 1 - i, j) = src.at<cv::Vec3b>(i, j); }
+	}
+	return 0;
+}
+
+int mirror(cv::Mat& src, cv::Mat& dst) {
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			dst.at<cv::Vec3b>(i, src.cols - 1 - j) = src.at<cv::Vec3b>(i, j);
+		}
+	}
+	return 0;
+}
+
 // int main() {
 //
 // 	// const std::string image_path = cv::samples::findFile("starry_night.jpg");
@@ -265,6 +295,8 @@ int greyscale(cv::Mat& src, cv::Mat& dst) {
 //
 // 	// cv::resize(img, img, cv::Size(10, 10));
 // 	// cv::Mat modified(img.rows, img.cols, CV_16SC3);
+//
+// 	// cv::Mat modified(img.rows, img.cols, CV_8UC3);
 //
 // 	cv::Mat modified(img.rows, img.cols, CV_8UC3);
 //
@@ -287,15 +319,15 @@ int greyscale(cv::Mat& src, cv::Mat& dst) {
 //
 // 	// laplacian(img, modified);
 //
-// 	greyscale(img, modified);
+// 	// greyscale(img, modified);
 //
-// 	
-// 	
+// 	mirror(img, modified);
+//
 // 	cv::imshow("modified", modified);
 //
 // 	while (true) {
 // 		auto k = cv::waitKey(0);
 // 		if (k == 'q') { return 0; }
-// 		if (k == 's') { cv::imwrite("greyscale.jpg", modified); }
+// 		if (k == 's') { cv::imwrite("mirrored.jpg", modified); }
 // 	}
 // }

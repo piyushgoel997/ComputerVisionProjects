@@ -29,3 +29,11 @@ int laplacian(cv::Mat& src, cv::Mat& dst);
 int combine(cv::Mat& src, cv::Mat& other, cv::Mat& dst, double ratio);
 
 int sepia(cv::Mat& src, cv::Mat& dst);
+
+int rotateACW(cv::Mat& src, cv::Mat& dst);
+
+int rotateCW(cv::Mat& src, cv::Mat& dst);
+
+int upsideDown(cv::Mat& src, cv::Mat& dst);
+
+int mirror(cv::Mat& src, cv::Mat& dst);
