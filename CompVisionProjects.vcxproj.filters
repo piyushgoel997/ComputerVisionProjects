@@ -21,7 +21,7 @@
     <ClCompile Include="vidDisplay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="filter.cpp">
+    <ClCompile Include="filters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -31,7 +31,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="filter.h">
+    <ClInclude Include="filters.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

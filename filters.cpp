@@ -5,6 +5,8 @@
 #include <iostream>
 #include <opencv2/imgproc.hpp>
 
+#include "filters.h"
+
 // int convolve(cv::Mat& a, cv::Mat& b, cv::Mat& result) {
 // 	// convolution including the division by magnitude.
 // 	for (int i = 0; i < a.rows; ++i) {
@@ -44,21 +46,46 @@
 // 	return 0;
 // }
 
+// int convolve(cv::Mat& a, cv::Mat& b, cv::Mat& result) {
+// 	// convolution including the division by magnitude.
+// 	for (auto i = 0; i < a.rows; ++i) {
+// 		for (auto j = 0; j < a.cols; ++j) {
+// 			if (i < b.rows / 2 || j < b.cols / 2 || i >= a.rows - b.rows / 2 || j >= a.cols - b.cols / 2) {
+// 				result.at<cv::Vec3s>(i, j) = a.at<cv::Vec3s>(i, j);
+// 				continue;
+// 			}
+//
+// 			short g[] = {0, 0, 0};
+// 			short den = 0;
+// 			for (auto k = -b.rows / 2; k <= b.rows / 2; ++k) {
+// 				for (auto l = -b.cols / 2; l <= b.cols / 2; ++l) {
+// 					const auto h = b.at<short>(b.rows / 2 + k, b.cols / 2 + l);
+// 					auto f = a.at<cv::Vec3s>(i - k, j - l);
+// 					for (auto t = 0; t < 3; ++t) { g[t] += f[t] * h; }
+// 					den += h;
+// 				}
+// 			}
+// 			cv::Vec3s g_;
+// 			for (auto t = 0; t < 3; ++t) {
+// 				if (den != 0) { g_[t] = g[t] / den; }
+// 				else { g_[t] = g[t]; }
+// 			}
+// 			result.at<cv::Vec3s>(i, j) = g_;
+// 		}
+// 	}
+// 	return 0;
+// }
+
 int convolve(cv::Mat& a, cv::Mat& b, cv::Mat& result) {
 	// convolution including the division by magnitude.
 	for (auto i = 0; i < a.rows; ++i) {
 		for (auto j = 0; j < a.cols; ++j) {
-			if (i < b.rows / 2 || j < b.cols / 2 || i >= a.rows - b.rows / 2 || j >= a.cols - b.cols / 2) {
-				result.at<cv::Vec3s>(i, j) = a.at<cv::Vec3s>(i, j);
-				continue;
-			}
-
 			short g[] = {0, 0, 0};
 			short den = 0;
 			for (auto k = -b.rows / 2; k <= b.rows / 2; ++k) {
 				for (auto l = -b.cols / 2; l <= b.cols / 2; ++l) {
 					const auto h = b.at<short>(b.rows / 2 + k, b.cols / 2 + l);
-					auto f = a.at<cv::Vec3s>(i - k, j - l);
+					auto f = a.at<cv::Vec3s>((i - k + a.rows) % a.rows, (j - l + a.cols) % a.cols);
 					for (auto t = 0; t < 3; ++t) { g[t] += f[t] * h; }
 					den += h;
 				}
@@ -84,8 +111,9 @@ int blur5x5(cv::Mat& src, cv::Mat& dst) {
 	src.convertTo(s, CV_16SC3);
 	convolve(s, onedfilter, temp);
 	onedfilter = onedfilter.t();
-	convolve(temp, onedfilter, dst);
-	dst.convertTo(dst, CV_8UC3);
+	cv::Mat temp2(src.rows, src.cols, CV_16SC3);
+	convolve(temp, onedfilter, temp2);
+	temp2.convertTo(dst, CV_8UC3);
 	return 0;
 }
 
@@ -121,8 +149,9 @@ int magnitude(cv::Mat& sx, cv::Mat& sy, cv::Mat& dst) {
 	sx.convertTo(sx, CV_64FC3);
 	sy.convertTo(sy, CV_64FC3);
 	cv::Mat prod = sx.mul(sx) + sy.mul(sy);
-	cv::pow(prod, 0.5, dst);
-	dst.convertTo(dst, CV_8UC3);
+	cv::Mat temp2(sx.rows, sx.cols, CV_64FC3);
+	cv::pow(prod, 0.5, temp2);
+	temp2.convertTo(dst, CV_8UC3);
 	return 0;
 }
 
@@ -211,8 +240,9 @@ int laplacian(cv::Mat& src, cv::Mat& dst) {
 	filter.at<short>(1, 1) = 4;
 	cv::Mat s;
 	src.convertTo(s, CV_16SC3);
-	convolve(s, filter, dst);
-	dst.convertTo(dst, CV_8UC3);
+	cv::Mat temp2(src.rows, src.cols, CV_16SC3);
+	convolve(s, filter, temp2);
+	temp2.convertTo(dst, CV_8UC3);
 	return 0;
 }
 
@@ -232,6 +262,18 @@ int combine(cv::Mat& src, cv::Mat& other, cv::Mat& dst, double ratio) {
 	return 0;
 }
 
+int meanBlur(cv::Mat& src, cv::Mat& dst, int blurLevel) {
+	assert(blurLevel >= 0);
+	int l = 2 * blurLevel + 1;
+	cv::Mat filter(l, l, CV_16SC1, 1);
+	cv::Mat s;
+	src.convertTo(s, CV_16SC3);
+	cv::Mat temp2(src.rows, src.cols, CV_16SC3);
+	convolve(s, filter, temp2);
+	temp2.convertTo(dst, CV_8UC3);
+	return 0;
+}
+
 int sepia(cv::Mat& src, cv::Mat& dst) {
 	for (int i = 0; i < src.rows; ++i) {
 		for (int j = 0; j < src.cols; ++j) {
@@ -247,7 +289,17 @@ int sepia(cv::Mat& src, cv::Mat& dst) {
 }
 
 int greyscale(cv::Mat& src, cv::Mat& dst) {
-	cv::cvtColor(src, dst, cv::COLOR_BGR2GRAY);
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			cv::Vec3b s = src.at<cv::Vec3b>(i, j);
+			cv::Vec3b d;
+			short avg = (s[0] + s[1] + s[2]) / 3;
+			d[0] = cv::saturate_cast<uchar>(avg);
+			d[1] = cv::saturate_cast<uchar>(avg);
+			d[2] = cv::saturate_cast<uchar>(avg);
+			dst.at<cv::Vec3b>(i, j) = d;
+		}
+	}
 	return 0;
 }
 
@@ -274,9 +326,7 @@ int upsideDown(cv::Mat& src, cv::Mat& dst) {
 
 int mirror(cv::Mat& src, cv::Mat& dst) {
 	for (int i = 0; i < src.rows; ++i) {
-		for (int j = 0; j < src.cols; ++j) {
-			dst.at<cv::Vec3b>(i, src.cols - 1 - j) = src.at<cv::Vec3b>(i, j);
-		}
+		for (int j = 0; j < src.cols; ++j) { dst.at<cv::Vec3b>(i, src.cols - 1 - j) = src.at<cv::Vec3b>(i, j); }
 	}
 	return 0;
 }
@@ -296,16 +346,15 @@ int mirror(cv::Mat& src, cv::Mat& dst) {
 // 	// cv::resize(img, img, cv::Size(10, 10));
 // 	// cv::Mat modified(img.rows, img.cols, CV_16SC3);
 //
-// 	// cv::Mat modified(img.rows, img.cols, CV_8UC3);
-//
 // 	cv::Mat modified(img.rows, img.cols, CV_8UC3);
+//
+// 	// blur5x5(img, modified);
 //
 // 	// cv::Mat sx(img.rows, img.cols, CV_16SC3);
 // 	// cv::Mat sy(img.rows, img.cols, CV_16SC3);
 // 	// sobolX3x3(img, sx);
 // 	// sobolY3x3(img, sy);
 // 	// magnitude(sx, sy, modified);
-// 	// cv::abs(modified);
 // 	// modified.convertTo(modified, CV_8UC3);
 //
 // 	// blurQuantize(img, modified, 15);
@@ -321,13 +370,15 @@ int mirror(cv::Mat& src, cv::Mat& dst) {
 //
 // 	// greyscale(img, modified);
 //
-// 	mirror(img, modified);
+// 	// mirror(img, modified);
+//
+// 	meanBlur(img, modified, 3);
 //
 // 	cv::imshow("modified", modified);
 //
 // 	while (true) {
 // 		auto k = cv::waitKey(0);
 // 		if (k == 'q') { return 0; }
-// 		if (k == 's') { cv::imwrite("mirrored.jpg", modified); }
+// 		if (k == 's') { cv::imwrite("meanBlur3.jpg", modified); }
 // 	}
 // }

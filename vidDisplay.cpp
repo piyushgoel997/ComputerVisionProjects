@@ -2,7 +2,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 
-#include "filter.h"
+#include "filters.h"
 
 int main() {
 	cv::VideoCapture* capDev;
@@ -24,8 +24,10 @@ int main() {
 	int scNum = 0;
 
 	bool grey = false, mirrored = false, blur = false, sobelx = false, sobely = false, sobelgrad = false, bq15 = false,
-	     cartonize = false, neg = false, lap = false, sep = false, updwn = false, cw = false, acw = false;
-	double brightness = 0, contrast = 1, ratio = 0.0;
+	     cartonize = false, lap = false, sep = false, updwn = false, cw = false, acw = false, invertR = false, invertG =
+		     false, invertB = false;
+	double contrast = 1, ratio = 0.0;
+	int brightness = 0, mblur = 0;
 	// can't use grey with all.
 
 	while (true) {
@@ -40,13 +42,13 @@ int main() {
 		if (grey) {
 			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
 			greyscale(frame, tempFrame);
-			tempFrame.convertTo(frame, CV_8UC3);
+			frame = tempFrame.clone();
 		}
 
 		if (blur) {
-			cv::Mat tempFrame(frame.rows, frame.cols, CV_16SC3);
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
 			blur5x5(frame, tempFrame);
-			tempFrame.convertTo(frame, CV_8UC3);
+			frame = tempFrame.clone();
 		}
 
 		if (sobelx) {
@@ -68,46 +70,46 @@ int main() {
 			sobolX3x3(frame, x);
 			cv::Mat y(frame.rows, frame.cols, CV_16SC3);
 			sobolY3x3(frame, y);
-			cv::Mat tempFrame(frame.rows, frame.cols, CV_16SC3);
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
 			magnitude(x, y, tempFrame);
-			tempFrame.convertTo(frame, CV_8UC3);
+			frame = tempFrame.clone();
 		}
 
 		if (bq15) {
 			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
 			blurQuantize(frame, tempFrame, 15);
-			tempFrame.convertTo(frame, CV_8UC3);
+			frame = tempFrame.clone();
 		}
 
 		if (cartonize) {
 			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
 			cartoon(frame, tempFrame, 15, 20);
-			tempFrame.convertTo(frame, CV_8UC3);
+			frame = tempFrame.clone();
 		}
 
-		if (neg) {
+		if (invertR || invertG || invertB) {
 			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
-			bool mask[] = {true, true, true};
+			bool mask[] = {invertB, invertG, invertR};
 			negative(frame, tempFrame, mask);
-			tempFrame.convertTo(frame, CV_8UC3);
+			frame = tempFrame.clone();
 		}
 
 		if (contrast != 1 || brightness != 0) {
 			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
 			adjustBrightnessContrast(frame, tempFrame, contrast, brightness);
-			tempFrame.convertTo(frame, CV_8UC3);
+			frame = tempFrame.clone();
 		}
 
 		if (lap) {
-			cv::Mat tempFrame(frame.rows, frame.cols, CV_16SC3);
+			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
 			laplacian(frame, tempFrame);
-			tempFrame.convertTo(frame, CV_8UC3);
+			frame = tempFrame.clone();
 		}
 
 		if (ratio != 0) {
 			cv::Mat tempFrame(frame.rows, frame.cols, CV_8UC3);
 			combine(frame, other, tempFrame, ratio);
-			tempFrame.convertTo(frame, CV_8UC3);
+			frame = tempFrame.clone();
 		}
 
 		if (sep) {
@@ -140,8 +142,14 @@ int main() {
 			frame = tempFrame.clone();
 		}
 
+		if (mblur != 0) {
+			cv::Mat tempFrame(frame.cols, frame.rows, CV_8UC3);
+			meanBlur(frame, tempFrame, mblur);
+			frame = tempFrame.clone();
+		}
+
 		cv::imshow("video", frame);
-		auto k = cv::waitKey(1); // why does setting this to zero doesn't work?
+		auto k = cv::waitKey(10); // why does setting this to zero doesn't work?
 		if (k == 'q') { break; }
 		if (k == 's') {
 			cv::imwrite("screencapture_" + std::to_string(scNum) + ".jpg", frame);
@@ -155,7 +163,9 @@ int main() {
 		if (k == 'm') { sobelgrad = ! sobelgrad; }
 		if (k == 'l') { bq15 = !bq15; }
 		if (k == 'c') { cartonize = !cartonize; }
-		if (k == 'n') { neg = !neg; }
+		if (k == '7') { invertR = !invertR; }
+		if (k == '8') { invertG = !invertG; }
+		if (k == '9') { invertB = !invertB; }
 		if (k == '1') { contrast = MAX(0, contrast-0.1); }
 		if (k == '2') { contrast = MIN(4, contrast+0.1); }
 		if (k == '3') { brightness = MAX(-260, brightness-10); }
@@ -167,6 +177,7 @@ int main() {
 		if (k == 'u') { updwn = !updwn; }
 		if (k == 'a') { acw = !acw; }
 		if (k == 'w') { cw = !cw; }
+		if (k == 'z') { mblur = (mblur + 1) % 4; }
 	}
 
 	delete capDev;

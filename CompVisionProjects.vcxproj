@@ -142,7 +142,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="filter.cpp" />
+    <ClCompile Include="filters.cpp" />
     <ClCompile Include="imgDisplay.cpp" />
     <ClCompile Include="vidDisplay.cpp" />
   </ItemGroup>
@@ -150,7 +150,7 @@
     <None Include=".gitignore" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="filter.h" />
+    <ClInclude Include="filters.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -37,3 +37,5 @@ int rotateCW(cv::Mat& src, cv::Mat& dst);
 int upsideDown(cv::Mat& src, cv::Mat& dst);
 
 int mirror(cv::Mat& src, cv::Mat& dst);
+
+int meanBlur(cv::Mat& src, cv::Mat& dst, int blurLevel);
