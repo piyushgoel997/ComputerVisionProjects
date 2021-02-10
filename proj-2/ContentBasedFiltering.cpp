@@ -123,37 +123,50 @@ void* HistogramFeaturizer::getFeature(const cv::Mat& img) {
 
 // DIFFERENT DISTANCE METRICS
 
-std::vector<double> DistanceMetric::normalizeVector(const std::vector<int>& vec) {
+// TODO make the metrics normalize only when the normalize parameter is true.
+
+std::vector<double>* DistanceMetric::normalizeVector(const std::vector<int>& vec, bool normalize) {
 	auto normalized = new std::vector<double>;
 	double sum = 0;
 	for (int i : vec) { sum += i; }
-	for (double i : vec) { normalized->push_back(i / sum); }
-	return *normalized;
+	for (double i : vec) {
+		if (normalize) { normalized->push_back(i / sum); }
+		else { normalized->push_back(i); }
+	}
+	return normalized;
 }
 
 
 double EuclideanDistance::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
 	auto distance = 0.0;
-	for (int i = 0; i < p.size(); ++i) {
-		int a = p.at(i), b = q.at(i);
+	auto p_ = normalizeVector(p, normalize);
+	auto q_ = normalizeVector(q, normalize);
+	for (int i = 0; i < p_->size(); ++i) {
+		auto a = p_->at(i), b = q_->at(i);
 		distance += pow(a - b, 2);
 	}
+	delete p_;
+	delete q_;
 	return sqrt(distance);
 }
 
 double L1Norm::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
 	auto distance = 0.0;
-	for (int i = 0; i < p.size(); ++i) {
-		int a = p.at(i), b = q.at(i);
+	auto p_ = normalizeVector(p, normalize);
+	auto q_ = normalizeVector(q, normalize);
+	for (int i = 0; i < p_->size(); ++i) {
+		auto a = p_->at(i), b = q_->at(i);
 		distance += abs(a - b);
 	}
+	delete p_;
+	delete q_;
 	return distance;
 }
 
 double HammingDistance::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
 	auto distance = 0.0;
 	for (int i = 0; i < p.size(); ++i) {
-		int a = p.at(i) > 0 ? 1 : 0, b = q.at(i) > 0 ? 1 : 0;
+		auto a = p.at(i) > 0 ? 1 : 0, b = q.at(i) > 0 ? 1 : 0;
 		distance += abs(a - b);
 	}
 	return distance;
@@ -161,13 +174,13 @@ double HammingDistance::calculateDistance(const std::vector<int>& p, const std::
 
 double HistogramDistance::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
 	auto intersection = 0.0;
-	auto p_ = normalizeVector(p);
-	auto q_ = normalizeVector(q);
+	auto p_ = normalizeVector(p, normalize);
+	auto q_ = normalizeVector(q, normalize);
 	for (int i = 0; i < p.size(); ++i) {
-		auto a = p_.at(i), b = q_.at(i);
+		auto a = p_->at(i), b = q_->at(i);
 		intersection += std::min(a, b);
 	}
-	delete &p_;
-	delete &q_;
-	return 1-intersection;
+	delete p_;
+	delete q_;
+	return 1 - intersection;
 }

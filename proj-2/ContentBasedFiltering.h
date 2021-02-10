@@ -44,30 +44,37 @@ public:
 
 class DistanceMetric {
 public:
+	DistanceMetric(const bool normalize) : normalize(normalize) {}
 	virtual double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) = 0;
-	static std::vector<double> normalizeVector(const std::vector<int>& vec);
+	static std::vector<double>* normalizeVector(const std::vector<int>& vec, bool normalize);
+
+	const bool normalize;
 };
 
 class EuclideanDistance : public DistanceMetric {
 	// sum of squared errors
 public:
+	EuclideanDistance(const bool normalize) : DistanceMetric(normalize) {}
 	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
 };
 
 class L1Norm : public DistanceMetric {
 	// L-1 Norm
 public:
+	L1Norm(const bool normalize) : DistanceMetric(normalize) {}
 	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
 };
 
 class HammingDistance : public DistanceMetric {
 	// Hamming Distance (for histograms)
 public:
+	HammingDistance(const bool normalize) : DistanceMetric(false) {}
 	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
 };
 
 class HistogramDistance : public DistanceMetric {
 	// Hamming Distance (for histograms)
 public:
+	HistogramDistance(const bool normalize) : DistanceMetric(normalize) {}
 	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
 };
