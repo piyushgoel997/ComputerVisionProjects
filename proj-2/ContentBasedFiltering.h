@@ -22,7 +22,7 @@ private:
 
 class ImageFeaturizer {
 public:
-	ImageFeaturizer(DistanceMetric& metric) : metric(metric) {};
+	ImageFeaturizer(DistanceMetric& metric) : metric(metric) {}
 	virtual void* getFeature(const cv::Mat& img) = 0;
 	void saveAfterFeaturizing(const cv::Mat& img, const std::string filepath);
 	void saveFeaturesToFile(void* features, std::string filepath);
@@ -33,18 +33,27 @@ public:
 };
 
 class BaselineFeaturizer : public ImageFeaturizer {
+	// uses the pixel values of a 9x9 square in the middle.
 public:
-	BaselineFeaturizer(DistanceMetric& dm) : ImageFeaturizer(dm) {};
+	BaselineFeaturizer(DistanceMetric& dm) : ImageFeaturizer(dm) {}
+	void* getFeature(const cv::Mat& img) override;
+};
+
+class HistogramFeaturizer : public ImageFeaturizer {
+	// uses the 2-d color (blue and green color) histogram of the whole image as the histogram.
+public:
+	HistogramFeaturizer(DistanceMetric& dm) : ImageFeaturizer(dm) {}
 	void* getFeature(const cv::Mat& img) override;
 };
 
 
 class DistanceMetric {
 public:
-	virtual double calculateDistance(const std::vector<uchar>& p, const std::vector<uchar>& q) = 0;
+	virtual double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) = 0;
 };
 
-class EuclideanDistance : public DistanceMetric{
+class EuclideanDistance : public DistanceMetric {
+	// sum of squared distance
 public:
-	double calculateDistance(const std::vector<uchar>& p, const std::vector<uchar>& q) override;
+	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
 };

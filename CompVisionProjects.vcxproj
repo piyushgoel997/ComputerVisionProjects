@@ -152,6 +152,9 @@
     <ClCompile Include="proj-2\ContentBasedFiltering.cpp" />
     <ClCompile Include="proj-2\Main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="proj-2\Text.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
