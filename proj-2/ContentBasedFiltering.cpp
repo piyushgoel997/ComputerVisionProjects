@@ -12,7 +12,7 @@ bool Matcher::validImageExtn(std::string extension) {
 	return extension == ".jpg" || extension == ".png" || extension == ".jpeg";
 }
 
-std::vector<std::string>* Matcher::getMatches(const std::string imgname, const int numMatches) {
+std::vector<std::string>* Matcher::getMatches(const std::string imgname, const int numMatches, DistanceMetric *metric) {
 	cv::Mat img = cv::imread(databaseDir + imgname);
 	void* targetFeature = featurizer.getFeature(img);
 	std::priority_queue<std::pair<double, std::string>> pq;
@@ -20,7 +20,7 @@ std::vector<std::string>* Matcher::getMatches(const std::string imgname, const i
 		std::cout << entry.path() << std::endl;
 		if (imgname.substr(0, imgname.find_last_of('.')) == entry.path().filename().string()) { continue; }
 		void* imgFeature = featurizer.loadFeatureFromFile(entry.path().string());
-		pq.push(std::make_pair(featurizer.getDistance(targetFeature, imgFeature), entry.path().filename().string()));
+		pq.push(std::make_pair(featurizer.getDistance(targetFeature, imgFeature, metric), entry.path().filename().string()));
 		delete imgFeature;
 		if (pq.size() > numMatches) { pq.pop(); }
 	}
@@ -76,10 +76,10 @@ void* ImageFeaturizer::loadFeatureFromFile(std::string filepath) {
 	return feature;
 }
 
-double ImageFeaturizer::getDistance(void* f, void* g) {
+double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric *metric) {
 	const auto f_ = *(std::vector<int>*)f;
 	const auto g_ = *(std::vector<int>*)g;
-	return metric.calculateDistance(f_, g_);
+	return metric->calculateDistance(f_, g_);
 }
 
 void ImageFeaturizer::saveAfterFeaturizing(const cv::Mat& img, const std::string filepath) {
