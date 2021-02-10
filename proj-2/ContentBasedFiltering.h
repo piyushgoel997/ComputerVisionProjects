@@ -45,10 +45,29 @@ public:
 class DistanceMetric {
 public:
 	virtual double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) = 0;
+	static std::vector<double> normalizeVector(const std::vector<int>& vec);
 };
 
 class EuclideanDistance : public DistanceMetric {
-	// sum of squared distance
+	// sum of squared errors
+public:
+	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
+};
+
+class L1Norm : public DistanceMetric {
+	// L-1 Norm
+public:
+	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
+};
+
+class HammingDistance : public DistanceMetric {
+	// Hamming Distance (for histograms)
+public:
+	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
+};
+
+class HistogramDistance : public DistanceMetric {
+	// Hamming Distance (for histograms)
 public:
 	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
 };

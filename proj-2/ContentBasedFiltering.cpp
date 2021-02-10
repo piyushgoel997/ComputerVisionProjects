@@ -12,7 +12,7 @@ bool Matcher::validImageExtn(std::string extension) {
 	return extension == ".jpg" || extension == ".png" || extension == ".jpeg";
 }
 
-std::vector<std::string>* Matcher::getMatches(const std::string imgname, const int numMatches, DistanceMetric *metric) {
+std::vector<std::string>* Matcher::getMatches(const std::string imgname, const int numMatches, DistanceMetric* metric) {
 	cv::Mat img = cv::imread(databaseDir + imgname);
 	void* targetFeature = featurizer.getFeature(img);
 	std::priority_queue<std::pair<double, std::string>> pq;
@@ -20,7 +20,8 @@ std::vector<std::string>* Matcher::getMatches(const std::string imgname, const i
 		std::cout << entry.path() << std::endl;
 		if (imgname.substr(0, imgname.find_last_of('.')) == entry.path().filename().string()) { continue; }
 		void* imgFeature = featurizer.loadFeatureFromFile(entry.path().string());
-		pq.push(std::make_pair(featurizer.getDistance(targetFeature, imgFeature, metric), entry.path().filename().string()));
+		pq.push(std::make_pair(featurizer.getDistance(targetFeature, imgFeature, metric),
+		                       entry.path().filename().string()));
 		delete imgFeature;
 		if (pq.size() > numMatches) { pq.pop(); }
 	}
@@ -76,15 +77,14 @@ void* ImageFeaturizer::loadFeatureFromFile(std::string filepath) {
 	return feature;
 }
 
-double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric *metric) {
+double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
 	const auto f_ = *(std::vector<int>*)f;
 	const auto g_ = *(std::vector<int>*)g;
 	return metric->calculateDistance(f_, g_);
 }
 
 void ImageFeaturizer::saveAfterFeaturizing(const cv::Mat& img, const std::string filepath) {
-	void* features = getFeature(img);
-	saveFeaturesToFile(features, filepath);
+	saveFeaturesToFile(getFeature(img), filepath);
 }
 
 
@@ -123,6 +123,15 @@ void* HistogramFeaturizer::getFeature(const cv::Mat& img) {
 
 // DIFFERENT DISTANCE METRICS
 
+std::vector<double> DistanceMetric::normalizeVector(const std::vector<int>& vec) {
+	auto normalized = new std::vector<double>;
+	double sum = 0;
+	for (int i : vec) { sum += i; }
+	for (double i : vec) { normalized->push_back(i / sum); }
+	return *normalized;
+}
+
+
 double EuclideanDistance::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
 	auto distance = 0.0;
 	for (int i = 0; i < p.size(); ++i) {
@@ -130,4 +139,35 @@ double EuclideanDistance::calculateDistance(const std::vector<int>& p, const std
 		distance += pow(a - b, 2);
 	}
 	return sqrt(distance);
+}
+
+double L1Norm::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
+	auto distance = 0.0;
+	for (int i = 0; i < p.size(); ++i) {
+		int a = p.at(i), b = q.at(i);
+		distance += abs(a - b);
+	}
+	return distance;
+}
+
+double HammingDistance::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
+	auto distance = 0.0;
+	for (int i = 0; i < p.size(); ++i) {
+		int a = p.at(i) > 0 ? 1 : 0, b = q.at(i) > 0 ? 1 : 0;
+		distance += abs(a - b);
+	}
+	return distance;
+}
+
+double HistogramDistance::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
+	auto intersection = 0.0;
+	auto p_ = normalizeVector(p);
+	auto q_ = normalizeVector(q);
+	for (int i = 0; i < p.size(); ++i) {
+		auto a = p_.at(i), b = q_.at(i);
+		intersection += std::min(a, b);
+	}
+	delete &p_;
+	delete &q_;
+	return 1-intersection;
 }
