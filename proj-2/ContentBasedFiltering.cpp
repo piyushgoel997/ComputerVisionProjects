@@ -88,6 +88,26 @@ void ImageFeaturizer::saveAfterFeaturizing(const cv::Mat& img, const std::string
 }
 
 
+double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric, int* breakAt, double* weights,
+                                    int numBreaks) {
+	const auto f_ = *(std::vector<int>*)f;
+	const auto g_ = *(std::vector<int>*)g;
+	double totalDistance = 0;
+	int startIdx = 0;
+	for (int i = 0; i <= numBreaks; ++i) {
+		int endIdx = i < numBreaks ? breakAt[i] : f_.size();
+		const std::vector<int> curr_f(f_.begin() + startIdx, f_.begin() + endIdx);
+		const std::vector<int> curr_g(g_.begin() + startIdx, g_.begin() + endIdx);
+		const double dist = metric->calculateDistance(curr_f, curr_g);
+		totalDistance += weights[i] * dist;
+		startIdx = endIdx;
+	}
+	double wtSum = 0;
+	for (int i = 0; i < numBreaks + 1; ++i) { wtSum += weights[i]; }
+	return totalDistance/wtSum;
+}
+
+
 // DIFFERENT FEATURIZERS
 
 void* BaselineFeaturizer::getFeature(const cv::Mat& img) {
@@ -131,11 +151,32 @@ void* HistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices[4]
 	return feature;
 }
 
-void* TopBottomMultiHistogramFeaturizer::getFeature(const cv::Mat& img) {
-	HistogramFeaturizer* hist = new HistogramFeaturizer(mask);
-	int sei1[4] = { 0, img.rows / 2, 0, img.cols };
+void* RGHistogramFeaturizer::getFeature(const cv::Mat& img) {
+	int startEndIndex[4] = {0, img.rows, 0, img.cols};
+	return getFeature(img, startEndIndex);
+}
+
+void* RGHistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices[4]) {
+	auto* const feature = new std::vector<int>;
+	int size = bucketSize * bucketSize;
+	for (int i = 0; i < size; ++i) { feature->push_back(0); }
+	for (int i = startEndIndices[0]; i < startEndIndices[1]; ++i) {
+		for (int j = startEndIndices[2]; j < startEndIndices[3]; ++j) {
+			cv::Vec3b pixel = img.at<cv::Vec3b>(i, j);
+			const double p0 = pixel[0], p1 = pixel[1], p2 = pixel[2];
+			const double sum = p0 + p1 + p2;
+			const int r = MAX(0, (bucketSize - 1) * p2 / sum), g = MAX(0, (bucketSize - 1) * p1 / sum);
+			feature->at(r * bucketSize + g) += 1;
+		}
+	}
+	return feature;
+}
+
+void* TopBottomMultiRGHistogramFeaturizer::getFeature(const cv::Mat& img) {
+	RGHistogramFeaturizer* hist = new RGHistogramFeaturizer(100);
+	int sei1[4] = {0, img.rows / 2, 0, img.cols};
 	auto* topFeature = (std::vector<int>*)hist->getFeature(img, sei1);
-	int sei2[4] = {img.rows / 2,img.rows, 0, img.cols };
+	int sei2[4] = {img.rows / 2, img.rows, 0, img.cols};
 	auto* bottomFeature = (std::vector<int>*)hist->getFeature(img, sei2);
 
 	std::vector<int>* feature = new std::vector<int>;
@@ -145,6 +186,33 @@ void* TopBottomMultiHistogramFeaturizer::getFeature(const cv::Mat& img) {
 	delete topFeature;
 	delete hist;
 	return feature;
+}
+
+double TopBottomMultiRGHistogramFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
+	int breakAt[1] = { bucketSize * bucketSize };
+	double weights[2] = { 1.0, 1.0 };
+	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 1);
+}
+
+void* CenterFullMultiRGHistogramFeaturizer::getFeature(const cv::Mat& img) {
+	RGHistogramFeaturizer* hist = new RGHistogramFeaturizer(100);
+	auto* fullFeature = (std::vector<int>*)hist->getFeature(img);
+	int sei[4] = {img.rows / 2 - 49, img.rows / 2 + 50, img.cols / 2 - 49, img.cols / 2 + 50};
+	auto* centerFeature = (std::vector<int>*)hist->getFeature(img, sei);
+
+	std::vector<int>* feature = new std::vector<int>;
+	for (int f : *fullFeature) { feature->push_back(f); }
+	for (int f : *centerFeature) { feature->push_back(f); }
+	delete fullFeature;
+	delete centerFeature;
+	delete hist;
+	return feature;
+}
+
+double CenterFullMultiRGHistogramFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
+	int breakAt[1] = {bucketSize * bucketSize};
+	double weights[2] = {1.0, 5.0};
+	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 1);
 }
 
 
@@ -197,7 +265,7 @@ double HammingDistance::calculateDistance(const std::vector<int>& p, const std::
 	return distance;
 }
 
-double HistogramDistance::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
+double NegativeOfHistogramIntersection::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
 	auto intersection = 0.0;
 	auto p_ = normalizeVector(p, normalize);
 	auto q_ = normalizeVector(q, normalize);
@@ -207,5 +275,5 @@ double HistogramDistance::calculateDistance(const std::vector<int>& p, const std
 	}
 	delete p_;
 	delete q_;
-	return 1 - intersection;
+	return -intersection;
 }

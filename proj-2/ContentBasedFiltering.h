@@ -24,9 +24,10 @@ class ImageFeaturizer {
 public:
 	virtual void* getFeature(const cv::Mat& img) = 0;
 	void saveAfterFeaturizing(const cv::Mat& img, const std::string filepath);
+	double getDistance(void* f, void* g, DistanceMetric* metric, int* breakAt, double* weights, int numBreaks);
 	void saveFeaturesToFile(void* features, std::string filepath);
 	void* loadFeatureFromFile(std::string filepath);
-	double getDistance(void* f, void* g, DistanceMetric* metric);
+	virtual double getDistance(void* f, void* g, DistanceMetric* metric);
 };
 
 class BaselineFeaturizer : public ImageFeaturizer {
@@ -46,16 +47,35 @@ public:
 	const int* mask;
 };
 
-class TopBottomMultiHistogramFeaturizer : public ImageFeaturizer {
-	// uses the color histogram of top + bottom half of the image. Use the mask to determine which color to use (1 to use a color and 0 to not).
-	// mask -> 0 = blue, 1 = green, 2 = red.
+class RGHistogramFeaturizer : public ImageFeaturizer {
+	// uses the r (r/r+g+b), g (g/r+g+b) for 2-d histogram over the whole image.
 public:
-	TopBottomMultiHistogramFeaturizer(const int mask[3]) : mask(mask) {}
+	RGHistogramFeaturizer(const int bucketSize) : bucketSize(bucketSize) {}
 	void* getFeature(const cv::Mat& img) override;
+	void* getFeature(const cv::Mat& img, int startEndIndices[4]);
 
-	const int* mask;
+	const int bucketSize;
 };
 
+class TopBottomMultiRGHistogramFeaturizer : public ImageFeaturizer {
+	// uses the r (r/r+g+b), g (g/r+g+b) for 2-d histogram over the top and bottom halves of the image separately.
+public:
+	TopBottomMultiRGHistogramFeaturizer(const int bucketSize) : bucketSize(bucketSize) {}
+	void* getFeature(const cv::Mat& img) override;
+	double getDistance(void* f, void* g, DistanceMetric* metric) override;
+
+	const int bucketSize;
+};
+
+class CenterFullMultiRGHistogramFeaturizer : public ImageFeaturizer {
+	// uses the r (r/r+g+b), g (g/r+g+b) for 2-d histogram over the central 100x100 pixels and the whole image separately.
+public:
+	CenterFullMultiRGHistogramFeaturizer(const int bucketSize) : bucketSize(bucketSize) {}
+	void* getFeature(const cv::Mat& img) override;
+	double getDistance(void* f, void* g, DistanceMetric* metric) override;
+
+	const int bucketSize;
+};
 
 class DistanceMetric {
 public:
@@ -87,9 +107,9 @@ public:
 	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
 };
 
-class HistogramDistance : public DistanceMetric {
+class NegativeOfHistogramIntersection : public DistanceMetric {
 	// Histogram Distance (for histograms)
 public:
-	HistogramDistance(const bool normalize) : DistanceMetric(normalize) {}
+	NegativeOfHistogramIntersection(const bool normalize) : DistanceMetric(normalize) {}
 	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
 };

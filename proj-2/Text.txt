@@ -1,0 +1,53 @@
+Task 1
+(with euclidean distance - unnormalized)
+pic.0986
+pic.0641
+pic.0233
+
+(with L-1 Norm)
+pic.0986
+pic.0641
+pic.0233
+
+Task 2
+BG-Histogram (with euclidean distance - normalized)
+pic.0477
+pic.0937
+pic.0860
+
+BG-Histogram (with histogram intersection/distance)
+pic.0110
+pic.1032
+pic.0092
+
+RGHistogram (with histogram intersection)
+pic.0080
+pic.0110
+pic.0426
+
+Task 3
+BG-Histogram (with histogram intersection) (Top Bottom)
+pic.0110
+pic.0092
+pic.1032
+
+RGHistogram (with histogram intersection) (Top Bottom)
+pic.0719
+pic.0680
+pic.0123
+
+RGHistogram (with histogram intersection) (Center-1 Full-1)
+pic.0719
+pic.0680
+pic.0123
+
+RGHistogram (with histogram intersection) (Center-2 Full-1)
+pic.0719
+pic.0897
+pic.0680
+
+RGHistogram (with histogram intersection) (Center-5 Full-1)
+pic.0897
+pic.0719
+pic.0731
+
