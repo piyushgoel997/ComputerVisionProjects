@@ -4,6 +4,7 @@
 #include <iostream>
 #include <queue>
 #include <opencv2/imgcodecs.hpp>
+#include "filters.h"
 
 
 // MATCHER
@@ -104,7 +105,7 @@ double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric, in
 	}
 	double wtSum = 0;
 	for (int i = 0; i < numBreaks + 1; ++i) { wtSum += weights[i]; }
-	return totalDistance/wtSum;
+	return totalDistance / wtSum;
 }
 
 
@@ -172,6 +173,29 @@ void* RGHistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices[
 	return feature;
 }
 
+void* AvgHistogramFeaturizer::getFeature(const cv::Mat& img) {
+	int startEndIndex[4] = {0, img.rows, 0, img.cols};
+	return getFeature(img, startEndIndex);
+}
+
+void* AvgHistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices[4]) {
+	// assumes the range is 1.
+	auto* const feature = new std::vector<int>;
+	int size = bucketSize;
+	for (int i = 0; i < size; ++i) { feature->push_back(0); }
+	for (int i = startEndIndices[0]; i < startEndIndices[1]; ++i) {
+		for (int j = startEndIndices[2]; j < startEndIndices[3]; ++j) {
+			cv::Vec3d pixel = img.at<cv::Vec3d>(i, j);
+			const double p0 = pixel[0], p1 = pixel[1], p2 = pixel[2];
+			const double avg = (p0 + p1 + p2)/3;
+			int idx = avg * (bucketSize - 1);
+			feature->at(idx) += 1;
+		}
+	}
+	return feature;
+}
+
+
 void* TopBottomMultiRGHistogramFeaturizer::getFeature(const cv::Mat& img) {
 	RGHistogramFeaturizer* hist = new RGHistogramFeaturizer(100);
 	int sei1[4] = {0, img.rows / 2, 0, img.cols};
@@ -189,13 +213,13 @@ void* TopBottomMultiRGHistogramFeaturizer::getFeature(const cv::Mat& img) {
 }
 
 double TopBottomMultiRGHistogramFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
-	int breakAt[1] = { bucketSize * bucketSize };
-	double weights[2] = { 1.0, 1.0 };
+	int breakAt[1] = {bucketSize * bucketSize};
+	double weights[2] = {1.0, 1.0};
 	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 1);
 }
 
 void* CenterFullMultiRGHistogramFeaturizer::getFeature(const cv::Mat& img) {
-	RGHistogramFeaturizer* hist = new RGHistogramFeaturizer(100);
+	RGHistogramFeaturizer* hist = new RGHistogramFeaturizer(bucketSize);
 	auto* fullFeature = (std::vector<int>*)hist->getFeature(img);
 	int sei[4] = {img.rows / 2 - 49, img.rows / 2 + 50, img.cols / 2 - 49, img.cols / 2 + 50};
 	auto* centerFeature = (std::vector<int>*)hist->getFeature(img, sei);
@@ -214,6 +238,38 @@ double CenterFullMultiRGHistogramFeaturizer::getDistance(void* f, void* g, Dista
 	double weights[2] = {1.0, 5.0};
 	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 1);
 }
+
+
+void* RGHistogramAndSobelOrientationTextureFeaturizer::getFeature(const cv::Mat& img) {
+	RGHistogramFeaturizer* hist = new RGHistogramFeaturizer(bucketSize);
+	auto* fullFeature = (std::vector<int>*)hist->getFeature(img);
+	cv::Mat sx(img.rows, img.cols, CV_16SC3);
+	cv::Mat sy(img.rows, img.cols, CV_16SC3);
+	sobolX3x3(img, sx);
+	sobolY3x3(img, sy);
+	cv::Mat orientation(img.rows, img.cols, CV_64FC3);
+	sobolOrientation(sx, sy, orientation);
+	// get an averaged histogram
+	AvgHistogramFeaturizer* avg = new AvgHistogramFeaturizer(bucketSize);
+	auto* texture = (std::vector<int>*)avg->getFeature(orientation);
+
+	std::vector<int>* feature = new std::vector<int>;
+	for (int f : *fullFeature) { feature->push_back(f); }
+	for (int f : *texture) { feature->push_back(f); }
+
+	delete fullFeature;
+	delete texture;
+	delete hist;
+	delete avg;
+	return feature;
+}
+
+double RGHistogramAndSobelOrientationTextureFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
+	int breakAt[1] = { bucketSize * bucketSize };
+	double weights[2] = { 1.0, 1.0 };
+	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 1);
+}
+
 
 
 // DIFFERENT DISTANCE METRICS

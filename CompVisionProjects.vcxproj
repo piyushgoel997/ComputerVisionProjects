@@ -147,9 +147,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="proj-2\ContentBasedFiltering.h" />
+    <ClInclude Include="proj-2\filters.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="proj-2\ContentBasedFiltering.cpp" />
+    <ClCompile Include="proj-2\filters.cpp" />
     <ClCompile Include="proj-2\Main.cpp" />
   </ItemGroup>
   <ItemGroup>

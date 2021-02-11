@@ -57,6 +57,16 @@ public:
 	const int bucketSize;
 };
 
+class AvgHistogramFeaturizer : public ImageFeaturizer {
+	// uses (r+g+b)/3 1-d histogram over the whole image.
+public:
+	AvgHistogramFeaturizer(const int bucketSize) : bucketSize(bucketSize) {}
+	void* getFeature(const cv::Mat& img) override;
+	void* getFeature(const cv::Mat& img, int startEndIndices[4]);
+
+	const int bucketSize;
+};
+
 class TopBottomMultiRGHistogramFeaturizer : public ImageFeaturizer {
 	// uses the r (r/r+g+b), g (g/r+g+b) for 2-d histogram over the top and bottom halves of the image separately.
 public:
@@ -74,6 +84,16 @@ public:
 	void* getFeature(const cv::Mat& img) override;
 	double getDistance(void* f, void* g, DistanceMetric* metric) override;
 
+	const int bucketSize;
+};
+
+class RGHistogramAndSobelOrientationTextureFeaturizer : public ImageFeaturizer {
+	// uses the r (r/r+g+b), g (g/r+g+b) for 2-d histogram over the whole image.
+public:
+	RGHistogramAndSobelOrientationTextureFeaturizer(const int bucketSize) : bucketSize(bucketSize) {}
+	void* getFeature(const cv::Mat& img) override;
+	double getDistance(void* f, void* g, DistanceMetric* metric) override;
+	
 	const int bucketSize;
 };
 
