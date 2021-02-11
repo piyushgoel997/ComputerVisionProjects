@@ -104,26 +104,51 @@ void* BaselineFeaturizer::getFeature(const cv::Mat& img) {
 }
 
 void* HistogramFeaturizer::getFeature(const cv::Mat& img) {
-	const int MAX = 256;
-	int* arr = new int[MAX * MAX];
-	for (int i = 0; i < MAX; ++i) { for (int j = 0; j < MAX; ++j) { arr[i + j * MAX] = 0; } }
-	for (int i = 0; i < img.rows; ++i) {
-		for (int j = 0; j < img.cols; ++j) {
+	int startEndIndex[4] = {0, img.rows, 0, img.cols};
+	return getFeature(img, startEndIndex);
+}
+
+void* HistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices[4]) {
+	const int max = 256;
+	auto* const feature = new std::vector<int>;
+	int size = 1;
+	for (int i = 0; i < 3; ++i) { if (mask[i]) { size *= max; } }
+	for (int i = 0; i < size; ++i) { feature->push_back(0); }
+	for (int i = startEndIndices[0]; i < startEndIndices[1]; ++i) {
+		for (int j = startEndIndices[2]; j < startEndIndices[3]; ++j) {
 			cv::Vec3b pixel = img.at<cv::Vec3b>(i, j);
-			arr[pixel[0] + pixel[1] * MAX] += 1;
+			int multiplier = 1;
+			int idx = 0;
+			for (int k = 0; k < 3; ++k) {
+				if (mask[k]) {
+					idx += pixel[k] * multiplier;
+					multiplier *= max;
+				}
+			}
+			feature->at(idx) += 1;
 		}
 	}
-	// unfold the matrix into a 1-d feature array
-	auto* const feature = new std::vector<int>;
-	for (int i = 0; i < MAX; ++i) { for (int j = 0; j < MAX; ++j) { feature->push_back(arr[i + j * MAX]); } }
-	delete[] arr;
+	return feature;
+}
+
+void* TopBottomMultiHistogramFeaturizer::getFeature(const cv::Mat& img) {
+	HistogramFeaturizer* hist = new HistogramFeaturizer(mask);
+	int sei1[4] = { 0, img.rows / 2, 0, img.cols };
+	auto* topFeature = (std::vector<int>*)hist->getFeature(img, sei1);
+	int sei2[4] = {img.rows / 2,img.rows, 0, img.cols };
+	auto* bottomFeature = (std::vector<int>*)hist->getFeature(img, sei2);
+
+	std::vector<int>* feature = new std::vector<int>;
+	for (int f : *topFeature) { feature->push_back(f); }
+	for (int f : *bottomFeature) { feature->push_back(f); }
+	delete bottomFeature;
+	delete topFeature;
+	delete hist;
 	return feature;
 }
 
 
 // DIFFERENT DISTANCE METRICS
-
-// TODO make the metrics normalize only when the normalize parameter is true.
 
 std::vector<double>* DistanceMetric::normalizeVector(const std::vector<int>& vec, bool normalize) {
 	auto normalized = new std::vector<double>;

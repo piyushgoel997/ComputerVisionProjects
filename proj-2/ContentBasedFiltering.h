@@ -36,9 +36,24 @@ public:
 };
 
 class HistogramFeaturizer : public ImageFeaturizer {
-	// uses the 2-d color (blue and green color) histogram of the whole image as the histogram.
+	// uses the color histogram of the whole image. Use the mask to determine which color to use (1 to use a color and 0 to not).
+	// mask -> 0 = blue, 1 = green, 2 = red.
 public:
+	HistogramFeaturizer(const int mask[3]) : mask(mask) {}
 	void* getFeature(const cv::Mat& img) override;
+	void* getFeature(const cv::Mat& img, int startEndIndices[4]);
+
+	const int* mask;
+};
+
+class TopBottomMultiHistogramFeaturizer : public ImageFeaturizer {
+	// uses the color histogram of top + bottom half of the image. Use the mask to determine which color to use (1 to use a color and 0 to not).
+	// mask -> 0 = blue, 1 = green, 2 = red.
+public:
+	TopBottomMultiHistogramFeaturizer(const int mask[3]) : mask(mask) {}
+	void* getFeature(const cv::Mat& img) override;
+
+	const int* mask;
 };
 
 
@@ -73,7 +88,7 @@ public:
 };
 
 class HistogramDistance : public DistanceMetric {
-	// Hamming Distance (for histograms)
+	// Histogram Distance (for histograms)
 public:
 	HistogramDistance(const bool normalize) : DistanceMetric(normalize) {}
 	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
