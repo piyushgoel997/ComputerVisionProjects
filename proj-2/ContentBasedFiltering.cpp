@@ -30,6 +30,7 @@ std::vector<std::string>* Matcher::getMatches(const std::string imgname, const i
 	auto matches = new std::vector<std::string>;
 	while (!pq.empty()) {
 		matches->push_back(pq.top().second);
+		// std::cout << pq.top().first << std::endl;
 		pq.pop();
 	}
 	std::reverse(matches->begin(), matches->end());
@@ -187,7 +188,7 @@ void* AvgHistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices
 		for (int j = startEndIndices[2]; j < startEndIndices[3]; ++j) {
 			cv::Vec3d pixel = img.at<cv::Vec3d>(i, j);
 			const double p0 = pixel[0], p1 = pixel[1], p2 = pixel[2];
-			const double avg = (p0 + p1 + p2)/3;
+			const double avg = (p0 + p1 + p2) / 3;
 			int idx = avg * (bucketSize - 1);
 			feature->at(idx) += 1;
 		}
@@ -265,11 +266,45 @@ void* RGHistogramAndSobelOrientationTextureFeaturizer::getFeature(const cv::Mat&
 }
 
 double RGHistogramAndSobelOrientationTextureFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
-	int breakAt[1] = { bucketSize * bucketSize };
-	double weights[2] = { 1.0, 1.0 };
+	int breakAt[1] = {bucketSize * bucketSize};
+	double weights[2] = {1.0, 1.0};
 	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 1);
 }
 
+void* RGFullAndCenterSobelTopAndBottomFullFeaturizer::getFeature(const cv::Mat& img) {
+	CenterFullMultiRGHistogramFeaturizer* hist = new CenterFullMultiRGHistogramFeaturizer(bucketSize);
+	auto* fullFeature = (std::vector<int>*)hist->getFeature(img);
+	cv::Mat sx(img.rows, img.cols, CV_16SC3);
+	cv::Mat sy(img.rows, img.cols, CV_16SC3);
+	sobolX3x3(img, sx);
+	sobolY3x3(img, sy);
+	cv::Mat orientation(img.rows, img.cols, CV_64FC3);
+	sobolOrientation(sx, sy, orientation);
+	// get an averaged histogram
+	AvgHistogramFeaturizer* avg = new AvgHistogramFeaturizer(bucketSize);
+	int sei1[4] = {0, img.rows / 2, 0, img.cols};
+	auto* textureTop = (std::vector<int>*)avg->getFeature(orientation, sei1);
+	int sei2[4] = {img.rows / 2, img.rows, 0, img.cols};
+	auto* textureBottom = (std::vector<int>*)avg->getFeature(orientation, sei2);
+
+	std::vector<int>* feature = new std::vector<int>;
+	for (int f : *fullFeature) { feature->push_back(f); }
+	for (int f : *textureTop) { feature->push_back(f); }
+	for (int f : *textureBottom) { feature->push_back(f); }
+
+	delete fullFeature;
+	delete textureTop;
+	delete textureBottom;
+	delete hist;
+	delete avg;
+	return feature;
+}
+
+double RGFullAndCenterSobelTopAndBottomFullFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
+	int breakAt[3] = {bucketSize * bucketSize, 2 * bucketSize * bucketSize, 3 * bucketSize * bucketSize};
+	double weights[4] = {2.0, 5.0, 1.0, 1.0};
+	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 4);
+}
 
 
 // DIFFERENT DISTANCE METRICS
@@ -311,6 +346,20 @@ double L1Norm::calculateDistance(const std::vector<int>& p, const std::vector<in
 	delete q_;
 	return distance;
 }
+
+double LNNorm::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
+	auto distance = 0.0;
+	auto p_ = normalizeVector(p, normalize);
+	auto q_ = normalizeVector(q, normalize);
+	for (int i = 0; i < p_->size(); ++i) {
+		auto a = p_->at(i), b = q_->at(i);
+		distance += pow(abs(a - b), N);
+	}
+	delete p_;
+	delete q_;
+	return distance;
+}
+
 
 double HammingDistance::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
 	auto distance = 0.0;

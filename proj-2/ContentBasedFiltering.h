@@ -97,6 +97,16 @@ public:
 	const int bucketSize;
 };
 
+class RGFullAndCenterSobelTopAndBottomFullFeaturizer : public ImageFeaturizer {
+	// for task 5.
+public:
+	RGFullAndCenterSobelTopAndBottomFullFeaturizer(const int bucketSize) : bucketSize(bucketSize) {}
+	void* getFeature(const cv::Mat& img) override;
+	double getDistance(void* f, void* g, DistanceMetric* metric) override;
+
+	const int bucketSize;
+};
+
 class DistanceMetric {
 public:
 	DistanceMetric(const bool normalize) : normalize(normalize) {}
@@ -118,6 +128,16 @@ class L1Norm : public DistanceMetric {
 public:
 	L1Norm(const bool normalize) : DistanceMetric(normalize) {}
 	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
+};
+
+class LNNorm : public DistanceMetric {
+	// L-1 Norm
+public:
+	LNNorm(const bool normalize, const int N) : DistanceMetric(normalize), N(N) {}
+	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
+
+private:
+	const int N;
 };
 
 class HammingDistance : public DistanceMetric {
