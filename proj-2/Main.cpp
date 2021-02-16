@@ -6,6 +6,8 @@
 
 
 ImageFeaturizer* getFeaturizer(const std::string& F) {
+	// This function creates the appropriate featurizer given the command line argument. Returns nullptr if the argument doesn't correspond to any of the featurizers.
+
 	if (F == "baseline" || F == "b") { return new BaselineFeaturizer(); }
 	if (F == "histogram-32" || F == "h-32") { return new RGHistogramFeaturizer(32); }
 	if (F == "histogram" || F == "h") {
@@ -89,10 +91,21 @@ ImageFeaturizer* getFeaturizer(const std::string& F) {
 		}
 		return new RGCoOccFullFeaturizer(a, d, b);
 	}
+	if (F == "pure-histogram") {
+		int mask[3] = { 0,0,0 };
+		std::string colors;
+		std::cin >> colors;
+		if (colors.find("b")) { mask[0] = 1; }
+		if (colors.find("g")) { mask[1] = 1; }
+		if (colors.find("r")) { mask[2] = 1; }
+		return new HistogramFeaturizer(mask);
+	}
 	return nullptr;
 }
 
 DistanceMetric* getDistanceMetric(const std::string& D) {
+	// This function creates the appropriate distance metric given the command line argument. Returns nullptr if the argument doesn't correspond to any of the distance metrics.
+
 	if (D == "euclid" || D == "e" || D == "l2") { return new EuclideanDistance(true); }
 	if (D == "l1") { return new L1Norm(true); }
 	if (D == "ln") {
@@ -106,12 +119,13 @@ DistanceMetric* getDistanceMetric(const std::string& D) {
 	return nullptr;
 }
 
+
 int main(int argc, char* argv[]) {
 	if (argc < 6) {
 		std::cout << "Incorrect number of arguments. Found " << argc << ", required either 6 or 7.\n";
 		return 1;
 	}
-	// either provide the correct feature database or don't, there is no check for that.
+	// either provide the feature database corresponding to the correct featurizer or don't provide it at all, as an incorrect database will result in undefined behavior.
 	std::string T = argv[1], B = argv[2], F = argv[3], D = argv[4], F_db = "temp\\";
 
 	// create a temporary working directory
@@ -139,7 +153,7 @@ int main(int argc, char* argv[]) {
 		std::cout << "ERROR:Incorrect method name.\n";
 		return 1;
 	}
-	
+
 	// create metric object if valid input.
 	DistanceMetric* dm = getDistanceMetric(D);
 	if (dm == nullptr) {
@@ -151,20 +165,22 @@ int main(int argc, char* argv[]) {
 
 	std::string target = T;
 	while (target != "q" || target != "quit") {
-
-		if (T == "i") { // multi-image mode
-			std::cout << "Enter the image file name (with the correct extension and the image should be in the image database).\n";
+		if (T == "i") {
+			// multi-image mode
+			std::cout <<
+				"Enter the image file name (with the correct extension and the image should be in the image database).\n";
 			std::cin >> target;
 		}
-		
-		if (argc <= 6) { matcher->featurizeAndSaveDataset(); }
-		std::vector<std::string>* matches = matcher->getMatches(target, N, dm);
 
+		// only create a database if the feature database is not yet filled up.
+		if (std::filesystem::is_empty(F_db)) { matcher->featurizeAndSaveDataset(); }
+		
+		std::vector<std::string>* matches = matcher->getMatches(target, N, dm);
 		for (std::string m : *matches) { std::cout << m << std::endl; }
 		delete matches;
 		if (T != "i") { target = "q"; }
 	}
-	
+
 	// delete the temporary directory
 	if (argc <= 6) { std::filesystem::remove_all(F_db); }
 
