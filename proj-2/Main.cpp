@@ -2,11 +2,10 @@
 #include <opencv2/core.hpp>
 
 #include "Matcher.h"
-#include "filters.h"
 
 
 ImageFeaturizer* getFeaturizer(const std::string& F);
-DistanceMetric* getDistanceMetric(const std::string& D);
+DistanceMetric* getDistanceMetric(const std::string& d);
 
 
 int main(int argc, char* argv[]) {
@@ -53,7 +52,7 @@ int main(int argc, char* argv[]) {
 	Matcher* matcher = new Matcher(*featurizer, B, F_db);
 
 	std::string target = T;
-	while (target != "q" || target != "quit") {
+	while (target != "q" && target!= "quit") {
 		if (T == "i") {
 			// multi-image mode
 			std::cout <<
@@ -167,11 +166,16 @@ ImageFeaturizer* getFeaturizer(const std::string& F) {
 	}
 	if (F == "pure-histogram") {
 		int mask[3] = {0, 0, 0};
-		std::string colors;
-		std::cin >> colors;
-		if (colors.find('b') != std::string::npos) { mask[0] = 1; }
-		if (colors.find('g') != std::string::npos) { mask[1] = 1; }
-		if (colors.find('r') != std::string::npos) { mask[2] = 1; }
+		int sum = 0;
+		while (sum == 0) {
+			std::cout << "Please enter a valid color string, containing at least one of the three characters - r, g, b.\n";
+			std::string colors;
+			std::cin >> colors;
+			if (colors.find('b') != std::string::npos) { mask[0] = 1; }
+			if (colors.find('g') != std::string::npos) { mask[1] = 1; }
+			if (colors.find('r') != std::string::npos) { mask[2] = 1; }
+			for (auto m : mask) { sum += m; }
+		}
 		return new HistogramFeaturizer(mask);
 	}
 	return nullptr;
@@ -179,16 +183,23 @@ ImageFeaturizer* getFeaturizer(const std::string& F) {
 
 DistanceMetric* getDistanceMetric(const std::string& D) {
 	// This function creates the appropriate distance metric given the command line argument. Returns nullptr if the argument doesn't correspond to any of the distance metrics.
-
-	if (D == "euclid" || D == "e" || D == "l2") { return new EuclideanDistance(true); }
-	if (D == "l1") { return new L1Norm(true); }
-	if (D == "ln") {
+	bool norm = false;
+	std::string endsWith = "-n";
+	std::string d = D;
+	if (D.length() > endsWith.length() && D.compare(D.length()-endsWith.length(), endsWith.length(), endsWith)==0) {
+		norm = true;
+		d = D.substr(0, D.length() - endsWith.length());
+	}
+	
+	if (d == "euclid" || d == "e" || d == "l2") { return new EuclideanDistance(norm); }
+	if (d == "l1") { return new L1Norm(norm); }
+	if (d == "ln") {
 		int n;
 		std::cout << "Enter the value of n:\n";
 		std::cin >> n;
-		return new LNNorm(true, n);
+		return new LNNorm(norm, n);
 	}
-	if (D == "hamming-distance" || D == "h") { return new HammingDistance(true); }
-	if (D == "histogram-intersection" || D == "i") { return new NegativeOfHistogramIntersection(true); }
+	if (d == "hamming-distance" || d == "h") { return new HammingDistance(norm); }
+	if (d == "histogram-intersection" || d == "i") { return new NegativeOfHistogramIntersection(norm); }
 	return nullptr;
 }

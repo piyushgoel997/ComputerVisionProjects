@@ -4,19 +4,20 @@
 // #include "Matcher.h"
 //
 // int main(int argc, char* argv) {
-// 	// const std::string dir =
-// 	// 	"C:\\MyFolder\\Courses\\CS5330-ComputerVisionAndPatternRecognition\\CompVisionProjects\\proj-2\\dataset\\images\\";
-// 	// ImageFeaturizer* featurizer = new BaselineFeaturizer();
-// 	// Matcher* matcher = new Matcher(*featurizer, dir,
-// 	//                 "C:\\MyFolder\\Courses\\CS5330-ComputerVisionAndPatternRecognition\\CompVisionProjects\\proj-2\\dataset\\baseline\\");
-// 	// // matcher->featurizeAndSaveDataset();
-// 	// DistanceMetric* dm = new EuclideanDistance(false);
+// 	std::string dir =
+// 		"C:\\MyFolder\\Courses\\CS5330-ComputerVisionAndPatternRecognition\\CompVisionProjects\\proj-2\\dataset\\images\\";
+// 	std::string fDir =
+// 		"C:\\MyFolder\\Courses\\CS5330-ComputerVisionAndPatternRecognition\\CompVisionProjects\\proj-2\\dataset\\baseline\\";
+// 	ImageFeaturizer* featurizer = new BaselineFeaturizer();
+// 	Matcher* matcher = new Matcher(*featurizer, dir, fDir);
+// 	matcher->featurizeAndSaveDataset();
+// 	DistanceMetric* dm = new EuclideanDistance(true);
 // 	// DistanceMetric* dm = new L1Norm(false);
-// 	// std::vector<std::string> matches = *(matcher->getMatches("pic.1016.jpg", 3, dm));
-// 	// for (std::string m : matches) { std::cout << m << std::endl; }
-// 	// delete dm;
-// 	// delete matcher;
-// 	// delete featurizer;
+// 	std::vector<std::string> matches = *(matcher->getMatches("pic.1016.jpg", 3, dm));
+// 	for (std::string m : matches) { std::cout << m << std::endl; }
+// 	delete dm;
+// 	delete matcher;
+// 	delete featurizer;
 //
 //
 // 	// const std::string dir =
@@ -98,17 +99,16 @@
 // 	// delete matcher;
 // 	// delete featurizer;
 //
-// 	const std::string dir =
-// 		"C:\\MyFolder\\Courses\\CS5330-ComputerVisionAndPatternRecognition\\CompVisionProjects\\proj-2\\dataset\\images\\";
-// 	ImageFeaturizer* featurizer = new RGCoOccFullFeaturizer(0, 5, 32);
-// 	Matcher* matcher = new Matcher(*featurizer, dir,
-// 		"C:\\MyFolder\\Courses\\CS5330-ComputerVisionAndPatternRecognition\\CompVisionProjects\\proj-2\\dataset\\co-rg\\");
-// 	// matcher->featurizeAndSaveDataset();
-// 	DistanceMetric* dm = new EuclideanDistance(true);
-// 	std::vector<std::string> matches = *(matcher->getMatches("pic.0251.jpg", 10, dm));
-// 	for (std::string m : matches) { std::cout << m << std::endl; }
-// 	delete dm;
-// 	delete matcher;
-// 	delete featurizer;
+// 	// const std::string dir =
+// 	// 	"C:\\MyFolder\\Courses\\CS5330-ComputerVisionAndPatternRecognition\\CompVisionProjects\\proj-2\\dataset\\images\\";
+// 	// ImageFeaturizer* featurizer = new RGCoOccFullFeaturizer(0, 5, 32);
+// 	// Matcher* matcher = new Matcher(*featurizer, dir,
+// 	// 	"C:\\MyFolder\\Courses\\CS5330-ComputerVisionAndPatternRecognition\\CompVisionProjects\\proj-2\\dataset\\co-rg\\");
+// 	// // matcher->featurizeAndSaveDataset();
+// 	// DistanceMetric* dm = new EuclideanDistance(true);
+// 	// std::vector<std::string> matches = *(matcher->getMatches("pic.0251.jpg", 10, dm));
+// 	// for (std::string m : matches) { std::cout << m << std::endl; }
+// 	// delete dm;
+// 	// delete matcher;
+// 	// delete featurizer;
 // }
-//
