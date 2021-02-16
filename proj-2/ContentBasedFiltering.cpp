@@ -55,6 +55,9 @@ void Matcher::featurizeAndSaveDataset() {
 		std::string savepath = featurizedDatabaseDir + getFilenameFromPath(path);
 		featurizer.saveAfterFeaturizing(img, savepath);
 	}
+
+	// See CoOccurrenceMatrix::beforeFinishSaving for why this line exists.
+	featurizer.beforeFinishSaving(featurizedDatabaseDir);
 }
 
 
@@ -378,26 +381,81 @@ void* CoOccurrenceMatrix::getFeature(const cv::Mat& img) {
 	for (int i = 0; i < histogram->size(); ++i) { histogram->at(i) /= sum; }
 
 	const std::vector<double> hist = static_cast<const std::vector<double>>(*histogram);
-	std::vector<double>* feature = new std::vector<double>;
+	auto* feature = new std::vector<double>;
 	Energy energy{};
-	feature->push_back(energy.calculate(hist));
+	const auto e = energy.calculate(hist);
+	feature->push_back(e);
+	updateMinsMaxs(e, 0);
+
 	Entropy entropy{};
-	feature->push_back(entropy.calculate(hist));
+	const auto h = entropy.calculate(hist);
+	feature->push_back(h);
+	updateMinsMaxs(h, 1);
+
 	Contrast contrast{};
-	feature->push_back(contrast.calculate(hist));
+	const auto c = contrast.calculate(hist);
+	feature->push_back(c);
+	updateMinsMaxs(c, 2);
+
 	Homogeneity homogeniety{};
-	feature->push_back(homogeniety.calculate(hist));
+	const auto m = homogeniety.calculate(hist);
+	feature->push_back(m);
+	updateMinsMaxs(m, 3);
+
 	MaximumProbability maxpr{};
-	feature->push_back(maxpr.calculate(hist));
+	const auto p = maxpr.calculate(hist);
+	feature->push_back(p);
+	updateMinsMaxs(p, 4);
 
 	delete histogram;
 	return feature;
 }
 
+// std::vector<double>* CoOccurrenceMatrix::mins = nullptr;
+// std::vector<double>* CoOccurrenceMatrix::maxs = nullptr;
+
+void CoOccurrenceMatrix::updateMinsMaxs(double x, int i) {
+	// if (mins == nullptr) {
+	// 	mins = new std::vector<double>;
+	// 	maxs = new std::vector<double>;
+	// }
+	mins->at(i) = MIN(x, mins->at(i));
+	maxs->at(i) = MAX(x, maxs->at(i));
+}
+
+void CoOccurrenceMatrix::beforeFinishSaving(std::string featurizedDatabaseDir) {
+	// rewrite all files to have the feature values updated by the formula (x-min)/(max-min).
+	// This is a sort of a work around for making this update, but I think this is the best way with the current program design/structure.
+
+	for (const auto& entry : std::filesystem::directory_iterator(featurizedDatabaseDir)) {
+		std::ifstream oldFile(entry.path());
+		// I know that appending to strings again and again is ineffective but due to the files not being extremely large, this inefficiency is okay.
+		std::string newContent;
+		double line = 0.0;
+		int idx = 0;
+		while (idx != fileStartIdx) {
+			oldFile >> newContent;
+			newContent += "n";
+			idx++;
+		}
+		idx = 0;
+		while (oldFile >> line) {
+			newContent += std::to_string((line - mins->at(idx)) / (maxs->at(idx) - mins->at(idx)));
+			newContent += "\n";
+			idx++;
+		}
+		oldFile.close();
+
+		std::ofstream newFile(entry.path());
+		newFile << newContent;
+		newFile.close();
+	}
+}
+
 void* RGCoOccFullFeaturizer::getFeature(const cv::Mat& img) {
 	RGHistogramFeaturizer rg(bucketSize);
 	auto* colorHist = static_cast<std::vector<int>*>(rg.getFeature(img));
-	CoOccurrenceMatrix com(axis, distance);
+	CoOccurrenceMatrix com(axis, distance, bucketSize * bucketSize);
 	auto* texture = static_cast<std::vector<double>*>(com.getFeature(img));
 	auto feature = new std::vector<double>;
 	for (auto e : *colorHist) { feature->push_back(1.0 * e); }
@@ -415,7 +473,6 @@ double RGCoOccFullFeaturizer::getDistance(void* f, void* g, DistanceMetric* metr
 	double weights[6] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
 	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 5);
 }
-
 
 // DIFFERENT DISTANCE METRICS
 

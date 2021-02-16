@@ -28,6 +28,7 @@ public:
 	void saveFeaturesToFile(void* features, std::string filepath);
 	void* loadFeatureFromFile(std::string filepath);
 	virtual double getDistance(void* f, void* g, DistanceMetric* metric);
+	virtual void beforeFinishSaving(std::string featurizedDatabaseDir) {}
 
 	bool doubleVec = false;
 };
@@ -119,11 +120,25 @@ public:
 // extn
 class CoOccurrenceMatrix : public ImageFeaturizer {
 public:
-	CoOccurrenceMatrix(const int axis, const int distance) : axis(axis), distance(distance) { doubleVec = true; }
+	CoOccurrenceMatrix(const int axis, const int distance, const int fileStartIdx = 0) : axis(axis), distance(distance),
+		fileStartIdx(fileStartIdx) {
+		doubleVec = true;
+		mins = new std::vector<double>;
+		maxs = new std::vector<double>;
+		for (int i = 0; i < 5; ++i) {
+			mins->push_back(DBL_MAX);
+			maxs->push_back(0);
+		}
+	}
+
 	void* getFeature(const cv::Mat& img) override;
+	void beforeFinishSaving(std::string featurizedDatabaseDir) override;
+	void updateMinsMaxs(double x, int i);
 
 private:
-	const int axis, distance;
+	const int axis, distance, fileStartIdx;
+	std::vector<double>* mins;
+	std::vector<double>* maxs;
 };
 
 // extn
