@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
 
 		// only create a database if the feature database is not yet filled up.
 		if (std::filesystem::is_empty(F_db)) { matcher->featurizeAndSaveDataset(); }
-		
+
 		std::vector<std::string>* matches = matcher->getMatches(target, N, dm);
 		for (std::string m : *matches) { std::cout << m << std::endl; }
 		delete matches;
@@ -134,7 +134,7 @@ ImageFeaturizer* getFeaturizer(const std::string& F) {
 	if (F == "cooc-1" || F == "c1") { return new CoOccurrenceMatrix(1, 5); }
 	if (F == "cooc" || F == "c") {
 		int a = -1;
-		while (a != 0 || a != 1) {
+		while (a != 0 && a != 1) {
 			std::cout << "Enter a valid axis number (either 0 or 1):\n";
 			std::cin >> a;
 		}
@@ -149,7 +149,7 @@ ImageFeaturizer* getFeaturizer(const std::string& F) {
 	if (F == "histogram-cooc-1" || F == "h-c1") { return new RGCoOccFullFeaturizer(1, 5, 32); }
 	if (F == "histogram-cooc" || F == "h-c") {
 		int a = -1;
-		while (a != 0 || a != 1) {
+		while (a != 0 && a != 1) {
 			std::cout << "Enter a valid axis number (either 0 or 1):\n";
 			std::cin >> a;
 		}
@@ -166,12 +166,12 @@ ImageFeaturizer* getFeaturizer(const std::string& F) {
 		return new RGCoOccFullFeaturizer(a, d, b);
 	}
 	if (F == "pure-histogram") {
-		int mask[3] = { 0,0,0 };
+		int mask[3] = {0, 0, 0};
 		std::string colors;
 		std::cin >> colors;
-		if (colors.find("b") != std::string::npos) { mask[0] = 1; }
-		if (colors.find("g") != std::string::npos) { mask[1] = 1; }
-		if (colors.find("r") != std::string::npos) { mask[2] = 1; }
+		if (colors.find('b') != std::string::npos) { mask[0] = 1; }
+		if (colors.find('g') != std::string::npos) { mask[1] = 1; }
+		if (colors.find('r') != std::string::npos) { mask[2] = 1; }
 		return new HistogramFeaturizer(mask);
 	}
 	return nullptr;
