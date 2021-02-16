@@ -30,7 +30,6 @@ std::vector<std::string>* Matcher::getMatches(const std::string imgname, const i
 	auto matches = new std::vector<std::string>;
 	while (!pq.empty()) {
 		matches->push_back(pq.top().second);
-		// std::cout << pq.top().first << std::endl;
 		pq.pop();
 	}
 	std::reverse(matches->begin(), matches->end());
@@ -64,48 +63,27 @@ void Matcher::featurizeAndSaveDataset() {
 // IMAGE FEATURIZER
 
 void ImageFeaturizer::saveFeaturesToFile(void* features, std::string filepath) {
-	if (!doubleVec) {
-		std::vector<int>* featureVector = (std::vector<int>*)features;
-		std::ofstream file;
-		file.open(filepath);
-		for (int f : *featureVector) { file << f << "\n"; }
-		file.close();
-		delete featureVector;
-	}
-	else {
-		std::vector<double>* featureVector = (std::vector<double>*)features;
-		std::ofstream file;
-		file.open(filepath);
-		for (double f : *featureVector) { file << f << "\n"; }
-		file.close();
-		delete featureVector;
-	}
+	auto featureVector = static_cast<std::vector<double>*>(features);
+	std::ofstream file;
+	file.open(filepath);
+	for (auto f : *featureVector) { file << f << "\n"; }
+	file.close();
+	delete featureVector;
 }
 
 void* ImageFeaturizer::loadFeatureFromFile(std::string filepath) {
-	if (!doubleVec) {
-		std::ifstream file;
-		file.open(filepath);
-		std::string line;
-		auto* const feature = new std::vector<int>;
-		int x;
-		while (file >> x) { (*feature).push_back(x); }
-		return feature;
-	}
-	else {
-		std::ifstream file;
-		file.open(filepath);
-		std::string line;
-		auto* const feature = new std::vector<double>;
-		double x;
-		while (file >> x) { (*feature).push_back(x); }
-		return feature;
-	}
+	std::ifstream file;
+	file.open(filepath);
+	std::string line;
+	auto* const feature = new std::vector<double>;
+	double x;
+	while (file >> x) { (*feature).push_back(x); }
+	return feature;
 }
 
 double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
-	const auto f_ = *(std::vector<int>*)f;
-	const auto g_ = *(std::vector<int>*)g;
+	const auto f_ = *static_cast<std::vector<double>*>(f);
+	const auto g_ = *static_cast<std::vector<double>*>(g);
 	return metric->calculateDistance(f_, g_);
 }
 
@@ -116,52 +94,21 @@ void ImageFeaturizer::saveAfterFeaturizing(const cv::Mat& img, const std::string
 
 double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric, int* breakAt, double* weights,
                                     int numBreaks) {
-	if (!doubleVec) {
-		const auto f_ = *(std::vector<int>*)f;
-		const auto g_ = *(std::vector<int>*)g;
-		double totalDistance = 0;
-		int startIdx = 0;
-		for (int i = 0; i <= numBreaks; ++i) {
-			int endIdx = i < numBreaks ? breakAt[i] : f_.size();
-			const std::vector<int> curr_f(f_.begin() + startIdx, f_.begin() + endIdx);
-			const std::vector<int> curr_g(g_.begin() + startIdx, g_.begin() + endIdx);
-			const double dist = metric->calculateDistance(curr_f, curr_g);
-			totalDistance += weights[i] * dist;
-			startIdx = endIdx;
-		}
-		double wtSum = 0;
-		for (int i = 0; i < numBreaks + 1; ++i) { wtSum += weights[i]; }
-		return totalDistance / wtSum;
+	const auto f_ = *static_cast<std::vector<double>*>(f);
+	const auto g_ = *static_cast<std::vector<double>*>(g);
+	double totalDistance = 0;
+	int startIdx = 0;
+	for (int i = 0; i <= numBreaks; ++i) {
+		int endIdx = i < numBreaks ? breakAt[i] : f_.size();
+		const std::vector<double> curr_f(f_.begin() + startIdx, f_.begin() + endIdx);
+		const std::vector<double> curr_g(g_.begin() + startIdx, g_.begin() + endIdx);
+		const auto dist = metric->calculateDistance(curr_f, curr_g);
+		totalDistance += weights[i] * dist;
+		startIdx = endIdx;
 	}
-	else {
-		const auto f_ = *(std::vector<double>*)f;
-		const auto g_ = *(std::vector<double>*)g;
-		double totalDistance = 0;
-		int startIdx = 0;
-		for (int i = 0; i <= numBreaks; ++i) {
-			int endIdx = i < numBreaks ? breakAt[i] : f_.size();
-			auto dist = 0.0;
-			// normalize f_, g_
-			double sumF = 0.0, sumG = 0.0;
-			if (endIdx - startIdx > 1) {
-				for (int j = startIdx; j < endIdx; ++j) {
-					sumF += f_.at(j);
-					sumG += g_.at(j);
-				}
-			}
-			else {
-				sumF = 1;
-				sumG = 1;
-			}
-			// calc euclidean dist
-			for (int j = startIdx; j < endIdx; ++j) { dist += pow(f_.at(j) / sumF - g_.at(j) / sumG, 2); }
-			totalDistance += weights[i] * sqrt(dist);
-			startIdx = endIdx;
-		}
-		double wtSum = 0;
-		for (int i = 0; i < numBreaks + 1; ++i) { wtSum += weights[i]; }
-		return totalDistance / wtSum;
-	}
+	double wtSum = 0;
+	for (int i = 0; i < numBreaks + 1; ++i) { wtSum += weights[i]; }
+	return totalDistance / wtSum;
 }
 
 
@@ -169,8 +116,8 @@ double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric, in
 
 void* BaselineFeaturizer::getFeature(const cv::Mat& img) {
 	if (img.rows < 9 || img.cols < 9) { throw std::exception("The image is too small."); }
-	auto* const feature = new std::vector<int>;
-	int startR = img.rows / 2 - 4, startC = img.cols / 2 - 4;
+	auto* const feature = new std::vector<double>;
+	auto startR = img.rows / 2 - 4, startC = img.cols / 2 - 4;
 	for (int i = 0; i < 9; ++i) {
 		for (int j = 0; j < 9; ++j) {
 			cv::Vec3b pixel = img.at<cv::Vec3b>(startR + i, startC + j);
@@ -187,16 +134,16 @@ void* HistogramFeaturizer::getFeature(const cv::Mat& img) {
 
 void* HistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices[4]) {
 	const int max = 256;
-	auto* const feature = new std::vector<int>;
+	auto* const feature = new std::vector<double>;
 	int size = 1;
-	for (int i = 0; i < 3; ++i) { if (mask[i]) { size *= max; } }
+	for (auto i = 0; i < 3; ++i) { if (mask[i]) { size *= max; } }
 	for (int i = 0; i < size; ++i) { feature->push_back(0); }
-	for (int i = startEndIndices[0]; i < startEndIndices[1]; ++i) {
-		for (int j = startEndIndices[2]; j < startEndIndices[3]; ++j) {
-			cv::Vec3b pixel = img.at<cv::Vec3b>(i, j);
+	for (auto i = startEndIndices[0]; i < startEndIndices[1]; ++i) {
+		for (auto j = startEndIndices[2]; j < startEndIndices[3]; ++j) {
+			auto pixel = img.at<cv::Vec3b>(i, j);
 			int multiplier = 1;
 			int idx = 0;
-			for (int k = 0; k < 3; ++k) {
+			for (auto k = 0; k < 3; ++k) {
 				if (mask[k]) {
 					idx += pixel[k] * multiplier;
 					multiplier *= max;
@@ -214,14 +161,14 @@ void* RGHistogramFeaturizer::getFeature(const cv::Mat& img) {
 }
 
 void* RGHistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices[4]) {
-	auto* const feature = new std::vector<int>;
-	int size = bucketSize * bucketSize;
-	for (int i = 0; i < size; ++i) { feature->push_back(0); }
-	for (int i = startEndIndices[0]; i < startEndIndices[1]; ++i) {
+	auto* const feature = new std::vector<double>;
+	auto size = bucketSize * bucketSize;
+	for (auto i = 0; i < size; ++i) { feature->push_back(0); }
+	for (auto i = startEndIndices[0]; i < startEndIndices[1]; ++i) {
 		for (int j = startEndIndices[2]; j < startEndIndices[3]; ++j) {
-			cv::Vec3b pixel = img.at<cv::Vec3b>(i, j);
+			auto pixel = img.at<cv::Vec3b>(i, j);
 			const double p0 = pixel[0], p1 = pixel[1], p2 = pixel[2];
-			const double sum = p0 + p1 + p2;
+			const auto sum = p0 + p1 + p2;
 			const int r = MAX(0, (bucketSize - 1) * p2 / sum), g = MAX(0, (bucketSize - 1) * p1 / sum);
 			feature->at(r * bucketSize + g) += 1;
 		}
@@ -236,14 +183,14 @@ void* AvgHistogramFeaturizer::getFeature(const cv::Mat& img) {
 
 void* AvgHistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices[4]) {
 	// assumes the range is 1.
-	auto* const feature = new std::vector<int>;
-	int size = bucketSize;
-	for (int i = 0; i < size; ++i) { feature->push_back(0); }
-	for (int i = startEndIndices[0]; i < startEndIndices[1]; ++i) {
-		for (int j = startEndIndices[2]; j < startEndIndices[3]; ++j) {
-			cv::Vec3d pixel = img.at<cv::Vec3d>(i, j);
-			const double p0 = pixel[0], p1 = pixel[1], p2 = pixel[2];
-			const double avg = (p0 + p1 + p2) / 3;
+	auto* const feature = new std::vector<double>;
+	const int size = bucketSize;
+	for (auto i = 0; i < size; ++i) { feature->push_back(0); }
+	for (auto i = startEndIndices[0]; i < startEndIndices[1]; ++i) {
+		for (auto j = startEndIndices[2]; j < startEndIndices[3]; ++j) {
+			auto pixel = img.at<cv::Vec3d>(i, j);
+			const auto p0 = pixel[0], p1 = pixel[1], p2 = pixel[2];
+			const auto avg = (p0 + p1 + p2) / 3;
 			int idx = avg * (bucketSize - 1);
 			feature->at(idx) += 1;
 		}
@@ -253,15 +200,15 @@ void* AvgHistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices
 
 
 void* TopBottomMultiRGHistogramFeaturizer::getFeature(const cv::Mat& img) {
-	RGHistogramFeaturizer* hist = new RGHistogramFeaturizer(100);
+	auto* hist = new RGHistogramFeaturizer(100);
 	int sei1[4] = {0, img.rows / 2, 0, img.cols};
-	auto* topFeature = (std::vector<int>*)hist->getFeature(img, sei1);
+	auto* topFeature = static_cast<std::vector<double>*>(hist->getFeature(img, sei1));
 	int sei2[4] = {img.rows / 2, img.rows, 0, img.cols};
-	auto* bottomFeature = (std::vector<int>*)hist->getFeature(img, sei2);
+	auto* bottomFeature = static_cast<std::vector<double>*>(hist->getFeature(img, sei2));
 
-	std::vector<int>* feature = new std::vector<int>;
-	for (int f : *topFeature) { feature->push_back(f); }
-	for (int f : *bottomFeature) { feature->push_back(f); }
+	auto* feature = new std::vector<double>;
+	for (auto f : *topFeature) { feature->push_back(f); }
+	for (auto f : *bottomFeature) { feature->push_back(f); }
 	delete bottomFeature;
 	delete topFeature;
 	delete hist;
@@ -275,14 +222,14 @@ double TopBottomMultiRGHistogramFeaturizer::getDistance(void* f, void* g, Distan
 }
 
 void* CenterFullMultiRGHistogramFeaturizer::getFeature(const cv::Mat& img) {
-	RGHistogramFeaturizer* hist = new RGHistogramFeaturizer(bucketSize);
-	auto* fullFeature = (std::vector<int>*)hist->getFeature(img);
+	auto hist = new RGHistogramFeaturizer(bucketSize);
+	auto* fullFeature = static_cast<std::vector<double>*>(hist->getFeature(img));
 	int sei[4] = {img.rows / 2 - 49, img.rows / 2 + 50, img.cols / 2 - 49, img.cols / 2 + 50};
-	auto* centerFeature = (std::vector<int>*)hist->getFeature(img, sei);
+	auto* centerFeature = static_cast<std::vector<double>*>(hist->getFeature(img, sei));
 
-	std::vector<int>* feature = new std::vector<int>;
-	for (int f : *fullFeature) { feature->push_back(f); }
-	for (int f : *centerFeature) { feature->push_back(f); }
+	auto* feature = new std::vector<double>;
+	for (auto f : *fullFeature) { feature->push_back(f); }
+	for (auto f : *centerFeature) { feature->push_back(f); }
 	delete fullFeature;
 	delete centerFeature;
 	delete hist;
@@ -297,8 +244,8 @@ double CenterFullMultiRGHistogramFeaturizer::getDistance(void* f, void* g, Dista
 
 
 void* RGHistogramAndSobelOrientationTextureFeaturizer::getFeature(const cv::Mat& img) {
-	RGHistogramFeaturizer* hist = new RGHistogramFeaturizer(bucketSize);
-	auto* fullFeature = (std::vector<int>*)hist->getFeature(img);
+	auto* hist = new RGHistogramFeaturizer(bucketSize);
+	auto* fullFeature = static_cast<std::vector<double>*>(hist->getFeature(img));
 	cv::Mat sx(img.rows, img.cols, CV_16SC3);
 	cv::Mat sy(img.rows, img.cols, CV_16SC3);
 	sobolX3x3(img, sx);
@@ -306,12 +253,12 @@ void* RGHistogramAndSobelOrientationTextureFeaturizer::getFeature(const cv::Mat&
 	cv::Mat orientation(img.rows, img.cols, CV_64FC3);
 	sobolOrientation(sx, sy, orientation);
 	// get an averaged histogram
-	AvgHistogramFeaturizer* avg = new AvgHistogramFeaturizer(bucketSize);
-	auto* texture = (std::vector<int>*)avg->getFeature(orientation);
+	auto* avg = new AvgHistogramFeaturizer(bucketSize);
+	auto* texture = static_cast<std::vector<double>*>(avg->getFeature(orientation));
 
-	std::vector<int>* feature = new std::vector<int>;
-	for (int f : *fullFeature) { feature->push_back(f); }
-	for (int f : *texture) { feature->push_back(f); }
+	auto* feature = new std::vector<double>;
+	for (auto f : *fullFeature) { feature->push_back(f); }
+	for (auto f : *texture) { feature->push_back(f); }
 
 	delete fullFeature;
 	delete texture;
@@ -327,8 +274,8 @@ double RGHistogramAndSobelOrientationTextureFeaturizer::getDistance(void* f, voi
 }
 
 void* RGFullAndCenterSobelTopAndBottomFullFeaturizer::getFeature(const cv::Mat& img) {
-	CenterFullMultiRGHistogramFeaturizer* hist = new CenterFullMultiRGHistogramFeaturizer(bucketSize);
-	auto* fullFeature = (std::vector<int>*)hist->getFeature(img);
+	auto hist = new CenterFullMultiRGHistogramFeaturizer(bucketSize);
+	auto* fullFeature = static_cast<std::vector<double>*>(hist->getFeature(img));
 	cv::Mat sx(img.rows, img.cols, CV_16SC3);
 	cv::Mat sy(img.rows, img.cols, CV_16SC3);
 	sobolX3x3(img, sx);
@@ -336,16 +283,16 @@ void* RGFullAndCenterSobelTopAndBottomFullFeaturizer::getFeature(const cv::Mat& 
 	cv::Mat orientation(img.rows, img.cols, CV_64FC3);
 	sobolOrientation(sx, sy, orientation);
 	// get an averaged histogram
-	AvgHistogramFeaturizer* avg = new AvgHistogramFeaturizer(bucketSize);
+	auto* avg = new AvgHistogramFeaturizer(bucketSize);
 	int sei1[4] = {0, img.rows / 2, 0, img.cols};
-	auto* textureTop = (std::vector<int>*)avg->getFeature(orientation, sei1);
+	auto* textureTop = static_cast<std::vector<double>*>(avg->getFeature(orientation, sei1));
 	int sei2[4] = {img.rows / 2, img.rows, 0, img.cols};
-	auto* textureBottom = (std::vector<int>*)avg->getFeature(orientation, sei2);
+	auto* textureBottom = static_cast<std::vector<double>*>(avg->getFeature(orientation, sei2));
 
-	std::vector<int>* feature = new std::vector<int>;
-	for (int f : *fullFeature) { feature->push_back(f); }
-	for (int f : *textureTop) { feature->push_back(f); }
-	for (int f : *textureBottom) { feature->push_back(f); }
+	auto* feature = new std::vector<double>;
+	for (auto f : *fullFeature) { feature->push_back(f); }
+	for (auto f : *textureTop) { feature->push_back(f); }
+	for (auto f : *textureBottom) { feature->push_back(f); }
 
 	delete fullFeature;
 	delete textureTop;
@@ -361,11 +308,10 @@ double RGFullAndCenterSobelTopAndBottomFullFeaturizer::getDistance(void* f, void
 	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 4);
 }
 
-
 void* CoOccurrenceMatrix::getFeature(const cv::Mat& img) {
 	cv::Mat grey(img.rows, img.cols, CV_8UC3);
 	greyscale(img, grey);
-	std::vector<double>* histogram = new std::vector<double>;
+	auto* histogram = new std::vector<double>;
 	int max = 256;
 	for (int i = 0; i < max * max; ++i) { histogram->push_back(0.0); }
 	for (int i = 0; i < img.rows - (1 - axis) * distance; ++i) {
@@ -376,11 +322,11 @@ void* CoOccurrenceMatrix::getFeature(const cv::Mat& img) {
 		}
 	}
 
-	int sum = 0;
+	auto sum = 0.0;
 	for (auto e : *histogram) { sum += e; }
-	for (int i = 0; i < histogram->size(); ++i) { histogram->at(i) /= sum; }
+	for (auto& i : *histogram) { i /= sum; }
 
-	const std::vector<double> hist = static_cast<const std::vector<double>>(*histogram);
+	const auto hist = static_cast<const std::vector<double>>(*histogram);
 	auto* feature = new std::vector<double>;
 	Energy energy{};
 	const auto e = energy.calculate(hist);
@@ -411,14 +357,7 @@ void* CoOccurrenceMatrix::getFeature(const cv::Mat& img) {
 	return feature;
 }
 
-// std::vector<double>* CoOccurrenceMatrix::mins = nullptr;
-// std::vector<double>* CoOccurrenceMatrix::maxs = nullptr;
-
 void CoOccurrenceMatrix::updateMinsMaxs(double x, int i) {
-	// if (mins == nullptr) {
-	// 	mins = new std::vector<double>;
-	// 	maxs = new std::vector<double>;
-	// }
 	mins->at(i) = MIN(x, mins->at(i));
 	maxs->at(i) = MAX(x, maxs->at(i));
 }
@@ -454,10 +393,10 @@ void CoOccurrenceMatrix::beforeFinishSaving(std::string featurizedDatabaseDir) {
 
 void* RGCoOccFullFeaturizer::getFeature(const cv::Mat& img) {
 	RGHistogramFeaturizer rg(bucketSize);
-	auto* colorHist = static_cast<std::vector<int>*>(rg.getFeature(img));
+	auto* colorHist = static_cast<std::vector<double>*>(rg.getFeature(img));
 	CoOccurrenceMatrix com(axis, distance, bucketSize * bucketSize);
 	auto* texture = static_cast<std::vector<double>*>(com.getFeature(img));
-	auto feature = new std::vector<double>;
+	auto* feature = new std::vector<double>;
 	for (auto e : *colorHist) { feature->push_back(1.0 * e); }
 	for (auto e : *texture) { feature->push_back(e); }
 	delete colorHist;
@@ -476,10 +415,10 @@ double RGCoOccFullFeaturizer::getDistance(void* f, void* g, DistanceMetric* metr
 
 // DIFFERENT DISTANCE METRICS
 
-std::vector<double>* DistanceMetric::normalizeVector(const std::vector<int>& vec, bool normalize) {
+std::vector<double>* DistanceMetric::normalizeVector(const std::vector<double>& vec, bool normalize) {
 	auto normalized = new std::vector<double>;
 	double sum = 0;
-	for (int i : vec) { sum += i; }
+	for (auto i : vec) { sum += i; }
 	for (double i : vec) {
 		if (normalize) { normalized->push_back(i / sum); }
 		else { normalized->push_back(i); }
@@ -488,7 +427,7 @@ std::vector<double>* DistanceMetric::normalizeVector(const std::vector<int>& vec
 }
 
 
-double EuclideanDistance::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
+double EuclideanDistance::calculateDistance(const std::vector<double>& p, const std::vector<double>& q) {
 	auto distance = 0.0;
 	auto p_ = normalizeVector(p, normalize);
 	auto q_ = normalizeVector(q, normalize);
@@ -501,7 +440,7 @@ double EuclideanDistance::calculateDistance(const std::vector<int>& p, const std
 	return sqrt(distance);
 }
 
-double L1Norm::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
+double L1Norm::calculateDistance(const std::vector<double>& p, const std::vector<double>& q) {
 	auto distance = 0.0;
 	auto p_ = normalizeVector(p, normalize);
 	auto q_ = normalizeVector(q, normalize);
@@ -514,7 +453,7 @@ double L1Norm::calculateDistance(const std::vector<int>& p, const std::vector<in
 	return distance;
 }
 
-double LNNorm::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
+double LNNorm::calculateDistance(const std::vector<double>& p, const std::vector<double>& q) {
 	auto distance = 0.0;
 	auto p_ = normalizeVector(p, normalize);
 	auto q_ = normalizeVector(q, normalize);
@@ -529,7 +468,7 @@ double LNNorm::calculateDistance(const std::vector<int>& p, const std::vector<in
 }
 
 
-double HammingDistance::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
+double HammingDistance::calculateDistance(const std::vector<double>& p, const std::vector<double>& q) {
 	auto distance = 0.0;
 	for (int i = 0; i < p.size(); ++i) {
 		auto a = p.at(i) > 0 ? 1 : 0, b = q.at(i) > 0 ? 1 : 0;
@@ -538,7 +477,7 @@ double HammingDistance::calculateDistance(const std::vector<int>& p, const std::
 	return distance;
 }
 
-double NegativeOfHistogramIntersection::calculateDistance(const std::vector<int>& p, const std::vector<int>& q) {
+double NegativeOfHistogramIntersection::calculateDistance(const std::vector<double>& p, const std::vector<double>& q) {
 	auto intersection = 0.0;
 	auto p_ = normalizeVector(p, normalize);
 	auto q_ = normalizeVector(q, normalize);

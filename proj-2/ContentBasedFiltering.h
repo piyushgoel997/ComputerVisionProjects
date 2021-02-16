@@ -29,8 +29,6 @@ public:
 	void* loadFeatureFromFile(std::string filepath);
 	virtual double getDistance(void* f, void* g, DistanceMetric* metric);
 	virtual void beforeFinishSaving(std::string featurizedDatabaseDir) {}
-
-	bool doubleVec = false;
 };
 
 // task 1
@@ -122,7 +120,6 @@ class CoOccurrenceMatrix : public ImageFeaturizer {
 public:
 	CoOccurrenceMatrix(const int axis, const int distance, const int fileStartIdx = 0) : axis(axis), distance(distance),
 		fileStartIdx(fileStartIdx) {
-		doubleVec = true;
 		mins = new std::vector<double>;
 		maxs = new std::vector<double>;
 		for (int i = 0; i < 5; ++i) {
@@ -145,7 +142,7 @@ private:
 class RGCoOccFullFeaturizer : public ImageFeaturizer {
 public:
 	RGCoOccFullFeaturizer(const int axis, const int distance, const int bucketSize) : axis(axis), distance(distance),
-		bucketSize(bucketSize) { doubleVec = true; }
+		bucketSize(bucketSize) { }
 
 	void* getFeature(const cv::Mat& img) override;
 	double getDistance(void* f, void* g, DistanceMetric* metric) override;
@@ -158,8 +155,8 @@ private:
 class DistanceMetric {
 public:
 	DistanceMetric(const bool normalize) : normalize(normalize) {}
-	virtual double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) = 0;
-	static std::vector<double>* normalizeVector(const std::vector<int>& vec, bool normalize);
+	virtual double calculateDistance(const std::vector<double>& p, const std::vector<double>& q) = 0;
+	static std::vector<double>* normalizeVector(const std::vector<double>& vec, bool normalize);
 
 	const bool normalize;
 };
@@ -168,21 +165,21 @@ class EuclideanDistance : public DistanceMetric {
 	// sum of squared errors
 public:
 	EuclideanDistance(const bool normalize) : DistanceMetric(normalize) {}
-	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
+	double calculateDistance(const std::vector<double>& p, const std::vector<double>& q) override;
 };
 
 class L1Norm : public DistanceMetric {
 	// L-1 Norm
 public:
 	L1Norm(const bool normalize) : DistanceMetric(normalize) {}
-	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
+	double calculateDistance(const std::vector<double>& p, const std::vector<double>& q) override;
 };
 
 class LNNorm : public DistanceMetric {
 	// L-1 Norm
 public:
 	LNNorm(const bool normalize, const int N) : DistanceMetric(normalize), N(N) {}
-	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
+	double calculateDistance(const std::vector<double>& p, const std::vector<double>& q) override;
 
 private:
 	const int N;
@@ -192,14 +189,14 @@ class HammingDistance : public DistanceMetric {
 	// Hamming Distance (for histograms)
 public:
 	HammingDistance(const bool normalize) : DistanceMetric(false) {}
-	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
+	double calculateDistance(const std::vector<double>& p, const std::vector<double>& q) override;
 };
 
 class NegativeOfHistogramIntersection : public DistanceMetric {
 	// Histogram Distance (for histograms)
 public:
 	NegativeOfHistogramIntersection(const bool normalize) : DistanceMetric(normalize) {}
-	double calculateDistance(const std::vector<int>& p, const std::vector<int>& q) override;
+	double calculateDistance(const std::vector<double>& p, const std::vector<double>& q) override;
 };
 
 class Metric {
