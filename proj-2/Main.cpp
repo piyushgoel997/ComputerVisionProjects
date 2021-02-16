@@ -5,6 +5,80 @@
 #include "filters.h"
 
 
+ImageFeaturizer* getFeaturizer(const std::string& F);
+DistanceMetric* getDistanceMetric(const std::string& D);
+
+
+int main(int argc, char* argv[]) {
+	if (argc < 6) {
+		std::cout << "Incorrect number of arguments. Found " << argc << ", required either 6 or 7.\n";
+		return 1;
+	}
+	// either provide the feature database corresponding to the correct featurizer or don't provide it at all, as an incorrect database will result in undefined behavior.
+	std::string T = argv[1], B = argv[2], F = argv[3], D = argv[4], F_db = "temp\\";
+
+	// create a temporary working directory
+	if (argc > 6) { F_db = argv[6]; }
+	else {
+		F_db = std::filesystem::current_path().append(F_db).string();
+		if (!std::filesystem::create_directory(F_db)) {
+			std::cout <<
+				"ERROR: couldn't create temporary directory. Make sure the folder where you're running this code doesn't already contain a temp folder.\n";
+			return 1;
+		}
+	}
+
+	// read N and check if valid.
+	int N;
+	std::istringstream iss(argv[5]);
+	if (!(iss >> N) || N <= 0) {
+		std::cout << "ERROR:Invalid number of matches to be found.\n";
+		return 1;
+	}
+
+	// create featurizer object if valid input.
+	ImageFeaturizer* featurizer = getFeaturizer(F);
+	if (featurizer == nullptr) {
+		std::cout << "ERROR:Incorrect method name.\n";
+		return 1;
+	}
+
+	// create metric object if valid input.
+	DistanceMetric* dm = getDistanceMetric(D);
+	if (dm == nullptr) {
+		std::cout << "ERROR:Incorrect distance metric name.\n";
+		return 1;
+	}
+
+	Matcher* matcher = new Matcher(*featurizer, B, F_db);
+
+	std::string target = T;
+	while (target != "q" || target != "quit") {
+		if (T == "i") {
+			// multi-image mode
+			std::cout <<
+				"Enter the image file name (with the correct extension and the image should be in the image database).\n";
+			std::cin >> target;
+		}
+
+		// only create a database if the feature database is not yet filled up.
+		if (std::filesystem::is_empty(F_db)) { matcher->featurizeAndSaveDataset(); }
+		
+		std::vector<std::string>* matches = matcher->getMatches(target, N, dm);
+		for (std::string m : *matches) { std::cout << m << std::endl; }
+		delete matches;
+		if (T != "i") { target = "q"; }
+	}
+
+	// delete the temporary directory
+	if (argc <= 6) { std::filesystem::remove_all(F_db); }
+
+	delete matcher;
+	delete featurizer;
+	delete dm;
+}
+
+
 ImageFeaturizer* getFeaturizer(const std::string& F) {
 	// This function creates the appropriate featurizer given the command line argument. Returns nullptr if the argument doesn't correspond to any of the featurizers.
 
@@ -95,9 +169,9 @@ ImageFeaturizer* getFeaturizer(const std::string& F) {
 		int mask[3] = { 0,0,0 };
 		std::string colors;
 		std::cin >> colors;
-		if (colors.find("b")) { mask[0] = 1; }
-		if (colors.find("g")) { mask[1] = 1; }
-		if (colors.find("r")) { mask[2] = 1; }
+		if (colors.find("b") != std::string::npos) { mask[0] = 1; }
+		if (colors.find("g") != std::string::npos) { mask[1] = 1; }
+		if (colors.find("r") != std::string::npos) { mask[2] = 1; }
 		return new HistogramFeaturizer(mask);
 	}
 	return nullptr;
@@ -117,74 +191,4 @@ DistanceMetric* getDistanceMetric(const std::string& D) {
 	if (D == "hamming-distance" || D == "h") { return new HammingDistance(true); }
 	if (D == "histogram-intersection" || D == "i") { return new NegativeOfHistogramIntersection(true); }
 	return nullptr;
-}
-
-
-int main(int argc, char* argv[]) {
-	if (argc < 6) {
-		std::cout << "Incorrect number of arguments. Found " << argc << ", required either 6 or 7.\n";
-		return 1;
-	}
-	// either provide the feature database corresponding to the correct featurizer or don't provide it at all, as an incorrect database will result in undefined behavior.
-	std::string T = argv[1], B = argv[2], F = argv[3], D = argv[4], F_db = "temp\\";
-
-	// create a temporary working directory
-	if (argc > 6) { F_db = argv[6]; }
-	else {
-		F_db = std::filesystem::current_path().append(F_db).string();
-		if (!std::filesystem::create_directory(F_db)) {
-			std::cout <<
-				"ERROR: couldn't create temporary directory. Make sure the folder where you're running this code doesn't already contain a temp folder.\n";
-			return 1;
-		}
-	}
-
-	// read N and check if valid.
-	int N;
-	std::istringstream iss(argv[5]);
-	if (!(iss >> N) || N <= 0) {
-		std::cout << "ERROR:Invalid number of matches to be found.\n";
-		return 1;
-	}
-
-	// create featurizer object if valid input.
-	ImageFeaturizer* featurizer = getFeaturizer(F);
-	if (featurizer == nullptr) {
-		std::cout << "ERROR:Incorrect method name.\n";
-		return 1;
-	}
-
-	// create metric object if valid input.
-	DistanceMetric* dm = getDistanceMetric(D);
-	if (dm == nullptr) {
-		std::cout << "ERROR:Incorrect distance metric name.\n";
-		return 1;
-	}
-
-	Matcher* matcher = new Matcher(*featurizer, B, F_db);
-
-	std::string target = T;
-	while (target != "q" || target != "quit") {
-		if (T == "i") {
-			// multi-image mode
-			std::cout <<
-				"Enter the image file name (with the correct extension and the image should be in the image database).\n";
-			std::cin >> target;
-		}
-
-		// only create a database if the feature database is not yet filled up.
-		if (std::filesystem::is_empty(F_db)) { matcher->featurizeAndSaveDataset(); }
-		
-		std::vector<std::string>* matches = matcher->getMatches(target, N, dm);
-		for (std::string m : *matches) { std::cout << m << std::endl; }
-		delete matches;
-		if (T != "i") { target = "q"; }
-	}
-
-	// delete the temporary directory
-	if (argc <= 6) { std::filesystem::remove_all(F_db); }
-
-	delete matcher;
-	delete featurizer;
-	delete dm;
 }
