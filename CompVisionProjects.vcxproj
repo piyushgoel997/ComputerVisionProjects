@@ -146,13 +146,17 @@
     <None Include=".gitignore" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="proj-2\ContentBasedFiltering.h" />
+    <ClInclude Include="proj-2\ImageFeaturizer.h" />
+    <ClInclude Include="proj-2\Matcher.h" />
     <ClInclude Include="proj-2\filters.h" />
+    <ClInclude Include="proj-2\Metrics.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="proj-2\ContentBasedFiltering.cpp" />
+    <ClCompile Include="proj-2\Matcher.cpp" />
+    <ClCompile Include="proj-2\ImageFeaturizer.cpp" />
     <ClCompile Include="proj-2\Main.cpp" />
     <ClCompile Include="proj-2\filters.cpp" />
+    <ClCompile Include="proj-2\Metrics.cpp" />
     <ClCompile Include="proj-2\Testing.cpp" />
   </ItemGroup>
   <ItemGroup>
