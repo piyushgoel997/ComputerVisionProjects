@@ -303,7 +303,7 @@ int sepia(cv::Mat& src, cv::Mat& dst) {
 	return 0;
 }
 
-int greyscale(cv::Mat& src, cv::Mat& dst) {
+int greyscale(const cv::Mat& src, cv::Mat& dst) {
 	for (int i = 0; i < src.rows; ++i) {
 		for (int j = 0; j < src.cols; ++j) {
 			cv::Vec3b s = src.at<cv::Vec3b>(i, j);

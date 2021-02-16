@@ -61,22 +61,43 @@ void Matcher::featurizeAndSaveDataset() {
 // IMAGE FEATURIZER
 
 void ImageFeaturizer::saveFeaturesToFile(void* features, std::string filepath) {
-	std::vector<int>* featureVector = (std::vector<int>*)features;
-	std::ofstream file;
-	file.open(filepath);
-	for (int f : *featureVector) { file << f << "\n"; }
-	file.close();
-	delete featureVector;
+	if (!doubleVec) {
+		std::vector<int>* featureVector = (std::vector<int>*)features;
+		std::ofstream file;
+		file.open(filepath);
+		for (int f : *featureVector) { file << f << "\n"; }
+		file.close();
+		delete featureVector;
+	}
+	else {
+		std::vector<double>* featureVector = (std::vector<double>*)features;
+		std::ofstream file;
+		file.open(filepath);
+		for (double f : *featureVector) { file << f << "\n"; }
+		file.close();
+		delete featureVector;
+	}
 }
 
 void* ImageFeaturizer::loadFeatureFromFile(std::string filepath) {
-	std::ifstream file;
-	file.open(filepath);
-	std::string line;
-	auto* const feature = new std::vector<int>;
-	int x;
-	while (file >> x) { (*feature).push_back(x); }
-	return feature;
+	if (!doubleVec) {
+		std::ifstream file;
+		file.open(filepath);
+		std::string line;
+		auto* const feature = new std::vector<int>;
+		int x;
+		while (file >> x) { (*feature).push_back(x); }
+		return feature;
+	}
+	else {
+		std::ifstream file;
+		file.open(filepath);
+		std::string line;
+		auto* const feature = new std::vector<double>;
+		double x;
+		while (file >> x) { (*feature).push_back(x); }
+		return feature;
+	}
 }
 
 double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
@@ -92,21 +113,52 @@ void ImageFeaturizer::saveAfterFeaturizing(const cv::Mat& img, const std::string
 
 double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric, int* breakAt, double* weights,
                                     int numBreaks) {
-	const auto f_ = *(std::vector<int>*)f;
-	const auto g_ = *(std::vector<int>*)g;
-	double totalDistance = 0;
-	int startIdx = 0;
-	for (int i = 0; i <= numBreaks; ++i) {
-		int endIdx = i < numBreaks ? breakAt[i] : f_.size();
-		const std::vector<int> curr_f(f_.begin() + startIdx, f_.begin() + endIdx);
-		const std::vector<int> curr_g(g_.begin() + startIdx, g_.begin() + endIdx);
-		const double dist = metric->calculateDistance(curr_f, curr_g);
-		totalDistance += weights[i] * dist;
-		startIdx = endIdx;
+	if (!doubleVec) {
+		const auto f_ = *(std::vector<int>*)f;
+		const auto g_ = *(std::vector<int>*)g;
+		double totalDistance = 0;
+		int startIdx = 0;
+		for (int i = 0; i <= numBreaks; ++i) {
+			int endIdx = i < numBreaks ? breakAt[i] : f_.size();
+			const std::vector<int> curr_f(f_.begin() + startIdx, f_.begin() + endIdx);
+			const std::vector<int> curr_g(g_.begin() + startIdx, g_.begin() + endIdx);
+			const double dist = metric->calculateDistance(curr_f, curr_g);
+			totalDistance += weights[i] * dist;
+			startIdx = endIdx;
+		}
+		double wtSum = 0;
+		for (int i = 0; i < numBreaks + 1; ++i) { wtSum += weights[i]; }
+		return totalDistance / wtSum;
 	}
-	double wtSum = 0;
-	for (int i = 0; i < numBreaks + 1; ++i) { wtSum += weights[i]; }
-	return totalDistance / wtSum;
+	else {
+		const auto f_ = *(std::vector<double>*)f;
+		const auto g_ = *(std::vector<double>*)g;
+		double totalDistance = 0;
+		int startIdx = 0;
+		for (int i = 0; i <= numBreaks; ++i) {
+			int endIdx = i < numBreaks ? breakAt[i] : f_.size();
+			auto dist = 0.0;
+			// normalize f_, g_
+			double sumF = 0.0, sumG = 0.0;
+			if (endIdx - startIdx > 1) {
+				for (int j = startIdx; j < endIdx; ++j) {
+					sumF += f_.at(j);
+					sumG += g_.at(j);
+				}
+			}
+			else {
+				sumF = 1;
+				sumG = 1;
+			}
+			// calc euclidean dist
+			for (int j = startIdx; j < endIdx; ++j) { dist += pow(f_.at(j) / sumF - g_.at(j) / sumG, 2); }
+			totalDistance += weights[i] * sqrt(dist);
+			startIdx = endIdx;
+		}
+		double wtSum = 0;
+		for (int i = 0; i < numBreaks + 1; ++i) { wtSum += weights[i]; }
+		return totalDistance / wtSum;
+	}
 }
 
 
@@ -307,6 +359,64 @@ double RGFullAndCenterSobelTopAndBottomFullFeaturizer::getDistance(void* f, void
 }
 
 
+void* CoOccurrenceMatrix::getFeature(const cv::Mat& img) {
+	cv::Mat grey(img.rows, img.cols, CV_8UC3);
+	greyscale(img, grey);
+	std::vector<double>* histogram = new std::vector<double>;
+	int max = 256;
+	for (int i = 0; i < max * max; ++i) { histogram->push_back(0.0); }
+	for (int i = 0; i < img.rows - (1 - axis) * distance; ++i) {
+		for (int j = 0; j < img.cols - axis * distance; ++j) {
+			histogram->at(
+				max * grey.at<cv::Vec3b>(i, j)[0] + grey.at<cv::Vec3b>(i + (1 - axis) * distance, j + axis * distance)[0
+				]) += 1;
+		}
+	}
+
+	int sum = 0;
+	for (auto e : *histogram) { sum += e; }
+	for (int i = 0; i < histogram->size(); ++i) { histogram->at(i) /= sum; }
+
+	const std::vector<double> hist = static_cast<const std::vector<double>>(*histogram);
+	std::vector<double>* feature = new std::vector<double>;
+	Energy energy{};
+	feature->push_back(energy.calculate(hist));
+	Entropy entropy{};
+	feature->push_back(entropy.calculate(hist));
+	Contrast contrast{};
+	feature->push_back(contrast.calculate(hist));
+	Homogeneity homogeniety{};
+	feature->push_back(homogeniety.calculate(hist));
+	MaximumProbability maxpr{};
+	feature->push_back(maxpr.calculate(hist));
+
+	delete histogram;
+	return feature;
+}
+
+void* RGCoOccFullFeaturizer::getFeature(const cv::Mat& img) {
+	RGHistogramFeaturizer rg(bucketSize);
+	auto* colorHist = static_cast<std::vector<int>*>(rg.getFeature(img));
+	CoOccurrenceMatrix com(axis, distance);
+	auto* texture = static_cast<std::vector<double>*>(com.getFeature(img));
+	auto feature = new std::vector<double>;
+	for (auto e : *colorHist) { feature->push_back(1.0 * e); }
+	for (auto e : *texture) { feature->push_back(e); }
+	delete colorHist;
+	delete texture;
+	return feature;
+}
+
+double RGCoOccFullFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
+	int breakAt[5] = {
+		bucketSize * bucketSize, bucketSize * bucketSize + 1, bucketSize * bucketSize + 2, bucketSize * bucketSize + 3,
+		bucketSize * bucketSize + 4
+	};
+	double weights[6] = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 5);
+}
+
+
 // DIFFERENT DISTANCE METRICS
 
 std::vector<double>* DistanceMetric::normalizeVector(const std::vector<int>& vec, bool normalize) {
@@ -351,6 +461,7 @@ double LNNorm::calculateDistance(const std::vector<int>& p, const std::vector<in
 	auto distance = 0.0;
 	auto p_ = normalizeVector(p, normalize);
 	auto q_ = normalizeVector(q, normalize);
+	auto ct = 0.0;
 	for (int i = 0; i < p_->size(); ++i) {
 		auto a = p_->at(i), b = q_->at(i);
 		distance += pow(abs(a - b), N);
@@ -381,4 +492,39 @@ double NegativeOfHistogramIntersection::calculateDistance(const std::vector<int>
 	delete p_;
 	delete q_;
 	return -intersection;
+}
+
+
+// Metrics
+
+double Energy::calculate(const std::vector<double>& p) {
+	auto e = 0.0;
+	for (auto i : p) { e += i * i; }
+	return e;
+}
+
+double Entropy::calculate(const std::vector<double>& p) {
+	auto e = 0.0;
+	for (auto i : p) { if (i != 0) { e += i * log(i); } }
+	return -e;
+}
+
+double Contrast::calculate(const std::vector<double>& p) {
+	auto e = 0.0;
+	int max = 256;
+	for (auto i = 0; i < p.size(); ++i) { e += pow((i / max - i % max), 2) * p.at(i); }
+	return e;
+}
+
+double Homogeneity::calculate(const std::vector<double>& p) {
+	auto e = 0.0;
+	int max = 256;
+	for (auto i = 0; i < p.size(); ++i) { e += (1.0 * p.at(i)) / (1 + abs(i / max - i % max)); }
+	return e;
+}
+
+double MaximumProbability::calculate(const std::vector<double>& p) {
+	auto e = 0.0;
+	for (auto i : p) { e = MAX(i, e); }
+	return e;
 }

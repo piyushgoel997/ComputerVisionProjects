@@ -31,10 +31,13 @@
     <ClCompile Include="proj-2\ContentBasedFiltering.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="proj-2\Main.cpp">
+    <ClCompile Include="proj-2\filters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="proj-2\filters.cpp">
+    <ClCompile Include="proj-2\Testing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="proj-2\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

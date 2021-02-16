@@ -1,6 +1,6 @@
 #include <opencv2/core/mat.hpp>
 
-int greyscale(cv::Mat& src, cv::Mat& dst);
+int greyscale(const cv::Mat& src, cv::Mat& dst);
 
 int blur5x5(cv::Mat& src, cv::Mat& dst);
 
