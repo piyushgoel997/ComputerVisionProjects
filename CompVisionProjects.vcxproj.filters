@@ -20,9 +20,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="proj-2\filters.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="proj-2\Matcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -32,11 +29,11 @@
     <ClInclude Include="proj-2\Metrics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="proj-2\filters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="proj-2\filters.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="proj-2\Testing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -50,6 +47,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="proj-2\Matcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="proj-2\filters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
