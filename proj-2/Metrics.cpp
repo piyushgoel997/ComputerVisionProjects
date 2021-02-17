@@ -2,6 +2,8 @@
 
 #include <opencv2/core/base.hpp>
 
+// Distance metrics. Names are self explanatory.
+
 std::vector<double>* DistanceMetric::normalizeVector(const std::vector<double>& vec, bool normalize) {
 	auto normalized = new std::vector<double>;
 	double sum = 0;
@@ -78,7 +80,7 @@ double NegativeOfHistogramIntersection::calculateDistance(const std::vector<doub
 }
 
 
-// Metrics
+// Metrics for co-occurrence matrix. Names are self-explanatory.
 
 double Energy::calculate(const std::vector<double>& p) {
 	auto e = 0.0;

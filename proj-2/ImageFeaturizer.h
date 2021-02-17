@@ -27,11 +27,15 @@ class HistogramFeaturizer : public ImageFeaturizer {
 	// uses the color histogram of the whole image. Use the mask to determine which color to use (1 to use a color and 0 to not).
 	// mask -> 0 = blue, 1 = green, 2 = red.
 public:
-	HistogramFeaturizer(const int mask[3]) : mask(mask) {}
+	HistogramFeaturizer(const int mask[3]) {
+		for (int i = 0; i < 3; ++i) {
+			this->mask[i] = mask[i];
+		}
+	}
 	void* getFeature(const cv::Mat& img) override;
 	void* getFeature(const cv::Mat& img, int startEndIndices[4]);
 
-	const int* mask;
+	int mask[3];
 };
 
 // task 2

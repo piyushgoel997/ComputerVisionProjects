@@ -10,10 +10,12 @@
 // MATCHER
 
 bool Matcher::validImageExtn(std::string extension) {
+	// just checks if the file extension is valid or not
 	return extension == ".jpg" || extension == ".png" || extension == ".jpeg";
 }
 
 std::vector<std::string>* Matcher::getMatches(const std::string imgname, const int numMatches, DistanceMetric* metric) {
+	// returns the list of best matches for a given image.
 	cv::Mat img = cv::imread(databaseDir + imgname);
 	void* targetFeature = featurizer.getFeature(img);
 	std::priority_queue<std::pair<double, std::string>> pq;
@@ -37,11 +39,13 @@ std::vector<std::string>* Matcher::getMatches(const std::string imgname, const i
 }
 
 std::string Matcher::getFilenameFromPath(std::filesystem::path path) {
+	// extracts the name of the file from the absolute path
 	return path.filename().string().substr(0, path.filename().string().find_last_of('.'));
 }
 
 
 void Matcher::featurizeAndSaveDataset() {
+	// generates the features for a image and saves it to a file, does this for every image of the data base.
 	for (const auto& entry : std::filesystem::directory_iterator(databaseDir)) {
 		const auto path = entry.path();
 

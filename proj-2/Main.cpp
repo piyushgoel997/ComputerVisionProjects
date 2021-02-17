@@ -51,8 +51,11 @@ int main(int argc, char* argv[]) {
 
 	Matcher* matcher = new Matcher(*featurizer, B, F_db);
 
+	// only create a database if the feature database is not yet filled up.
+	if (std::filesystem::is_empty(F_db)) { matcher->featurizeAndSaveDataset(); }
+	
 	std::string target = T;
-	while (target != "q" && target!= "quit") {
+	while (1) {
 		if (T == "i") {
 			// multi-image mode
 			std::cout <<
@@ -60,13 +63,14 @@ int main(int argc, char* argv[]) {
 			std::cin >> target;
 		}
 
-		// only create a database if the feature database is not yet filled up.
-		if (std::filesystem::is_empty(F_db)) { matcher->featurizeAndSaveDataset(); }
+		if (target == "q") { break; }
 
 		std::vector<std::string>* matches = matcher->getMatches(target, N, dm);
-		for (std::string m : *matches) { std::cout << m << std::endl; }
+		std::cout << "Top " << N << " matches (in order of best to worst): ";
+		for (std::string m : *matches) { std::cout << m << ", "; }
+		std::cout << std::endl;
 		delete matches;
-		if (T != "i") { target = "q"; }
+		if (T != "i") { break;; }
 	}
 
 	// delete the temporary directory
@@ -168,7 +172,8 @@ ImageFeaturizer* getFeaturizer(const std::string& F) {
 		int mask[3] = {0, 0, 0};
 		int sum = 0;
 		while (sum == 0) {
-			std::cout << "Please enter a valid color string, containing at least one of the three characters - r, g, b.\n";
+			std::cout <<
+				"Please enter a valid color string, containing at least one of the three characters - r, g, b.\n";
 			std::string colors;
 			std::cin >> colors;
 			if (colors.find('b') != std::string::npos) { mask[0] = 1; }
@@ -186,17 +191,19 @@ DistanceMetric* getDistanceMetric(const std::string& D) {
 	bool norm = false;
 	std::string endsWith = "-n";
 	std::string d = D;
-	if (D.length() > endsWith.length() && D.compare(D.length()-endsWith.length(), endsWith.length(), endsWith)==0) {
+	if (D.length() > endsWith.length() && D.compare(D.length() - endsWith.length(), endsWith.length(), endsWith) == 0) {
 		norm = true;
 		d = D.substr(0, D.length() - endsWith.length());
 	}
-	
+
 	if (d == "euclid" || d == "e" || d == "l2") { return new EuclideanDistance(norm); }
 	if (d == "l1") { return new L1Norm(norm); }
 	if (d == "ln") {
-		int n;
-		std::cout << "Enter the value of n:\n";
-		std::cin >> n;
+		int n = 0;
+		while (n <= 0) {
+			std::cout << "Enter a valid value of n (>0):\n";
+			std::cin >> n;
+		}
 		return new LNNorm(norm, n);
 	}
 	if (d == "hamming-distance" || d == "h") { return new HammingDistance(norm); }

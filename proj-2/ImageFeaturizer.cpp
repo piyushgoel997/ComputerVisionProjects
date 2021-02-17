@@ -5,7 +5,9 @@
 
 #include "filters.h"
 
+
 void ImageFeaturizer::saveFeaturesToFile(void* features, std::string filepath) {
+	// save the features to the files after they've been calculated.
 	auto featureVector = static_cast<std::vector<double>*>(features);
 	std::ofstream file;
 	file.open(filepath);
@@ -15,6 +17,7 @@ void ImageFeaturizer::saveFeaturesToFile(void* features, std::string filepath) {
 }
 
 void* ImageFeaturizer::loadFeatureFromFile(std::string filepath) {
+	// load the features from files.
 	std::ifstream file;
 	file.open(filepath);
 	std::string line;
@@ -25,18 +28,21 @@ void* ImageFeaturizer::loadFeatureFromFile(std::string filepath) {
 }
 
 double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
+	// get distance between two different features.
 	const auto f_ = *static_cast<std::vector<double>*>(f);
 	const auto g_ = *static_cast<std::vector<double>*>(g);
 	return metric->calculateDistance(f_, g_);
 }
 
 void ImageFeaturizer::saveAfterFeaturizing(const cv::Mat& img, const std::string filepath) {
+	// this just mitigates it's job to another functions.
 	saveFeaturesToFile(getFeature(img), filepath);
 }
 
 
 double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric, int* breakAt, double* weights,
                                     int numBreaks) {
+	// a more generic version of getDistance which can handle combinations of different feature types. 
 	const auto f_ = *static_cast<std::vector<double>*>(f);
 	const auto g_ = *static_cast<std::vector<double>*>(g);
 	double totalDistance = 0;
@@ -57,6 +63,7 @@ double ImageFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric, in
 
 // DIFFERENT FEATURIZERS
 
+// task-1
 void* BaselineFeaturizer::getFeature(const cv::Mat& img) {
 	if (img.rows < 9 || img.cols < 9) { throw std::exception("The image is too small."); }
 	auto* const feature = new std::vector<double>;
@@ -70,6 +77,7 @@ void* BaselineFeaturizer::getFeature(const cv::Mat& img) {
 	return feature;
 }
 
+// Extn-3
 void* HistogramFeaturizer::getFeature(const cv::Mat& img) {
 	int startEndIndex[4] = {0, img.rows, 0, img.cols};
 	return getFeature(img, startEndIndex);
@@ -98,6 +106,7 @@ void* HistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices[4]
 	return feature;
 }
 
+// task-2
 void* RGHistogramFeaturizer::getFeature(const cv::Mat& img) {
 	int startEndIndex[4] = {0, img.rows, 0, img.cols};
 	return getFeature(img, startEndIndex);
@@ -119,6 +128,7 @@ void* RGHistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices[
 	return feature;
 }
 
+// Extn-4
 void* AvgHistogramFeaturizer::getFeature(const cv::Mat& img) {
 	int startEndIndex[4] = {0, img.rows, 0, img.cols};
 	return getFeature(img, startEndIndex);
@@ -141,7 +151,7 @@ void* AvgHistogramFeaturizer::getFeature(const cv::Mat& img, int startEndIndices
 	return feature;
 }
 
-
+// Extn-5
 void* TopBottomMultiRGHistogramFeaturizer::getFeature(const cv::Mat& img) {
 	auto* hist = new RGHistogramFeaturizer(100);
 	int sei1[4] = {0, img.rows / 2, 0, img.cols};
@@ -164,6 +174,7 @@ double TopBottomMultiRGHistogramFeaturizer::getDistance(void* f, void* g, Distan
 	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 1);
 }
 
+// task-3
 void* CenterFullMultiRGHistogramFeaturizer::getFeature(const cv::Mat& img) {
 	auto hist = new RGHistogramFeaturizer(bucketSize);
 	auto* fullFeature = static_cast<std::vector<double>*>(hist->getFeature(img));
@@ -181,11 +192,12 @@ void* CenterFullMultiRGHistogramFeaturizer::getFeature(const cv::Mat& img) {
 
 double CenterFullMultiRGHistogramFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
 	int breakAt[1] = {bucketSize * bucketSize};
-	double weights[2] = {1.0, 5.0};
+	double weights[2] = {1.0, 1.0};
 	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 1);
 }
 
 
+// Task-4
 void* RGHistogramAndSobelOrientationTextureFeaturizer::getFeature(const cv::Mat& img) {
 	auto* hist = new RGHistogramFeaturizer(bucketSize);
 	auto* fullFeature = static_cast<std::vector<double>*>(hist->getFeature(img));
@@ -216,6 +228,7 @@ double RGHistogramAndSobelOrientationTextureFeaturizer::getDistance(void* f, voi
 	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 1);
 }
 
+// Task-5
 void* RGFullAndCenterSobelTopAndBottomFullFeaturizer::getFeature(const cv::Mat& img) {
 	auto hist = new CenterFullMultiRGHistogramFeaturizer(bucketSize);
 	auto* fullFeature = static_cast<std::vector<double>*>(hist->getFeature(img));
@@ -246,11 +259,12 @@ void* RGFullAndCenterSobelTopAndBottomFullFeaturizer::getFeature(const cv::Mat& 
 }
 
 double RGFullAndCenterSobelTopAndBottomFullFeaturizer::getDistance(void* f, void* g, DistanceMetric* metric) {
-	int breakAt[3] = {bucketSize * bucketSize, 2 * bucketSize * bucketSize, 3 * bucketSize * bucketSize};
+	int breakAt[3] = {bucketSize * bucketSize, 2 * bucketSize * bucketSize, 2 * bucketSize * bucketSize + bucketSize};
 	double weights[4] = {2.0, 5.0, 1.0, 1.0};
-	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 4);
+	return ImageFeaturizer::getDistance(f, g, metric, breakAt, weights, 3);
 }
 
+// Extn-1
 void* CoOccurrenceMatrix::getFeature(const cv::Mat& img) {
 	cv::Mat grey(img.rows, img.cols, CV_8UC3);
 	greyscale(img, grey);
@@ -311,7 +325,8 @@ void CoOccurrenceMatrix::beforeFinishSaving(std::string featurizedDatabaseDir) {
 
 	for (const auto& entry : std::filesystem::directory_iterator(featurizedDatabaseDir)) {
 		std::ifstream oldFile(entry.path());
-		// I know that appending to strings again and again is ineffective but due to the files not being extremely large, this inefficiency is okay.
+		// I know that appending to strings again and again is ineffective but due to the files not being extremely large,
+		// this inefficiency is okay for now and there is no need for the optimization as it would result in unnecessary complications in the code.
 		std::string newContent;
 		double line = 0.0;
 		int idx = 0;
@@ -334,6 +349,7 @@ void CoOccurrenceMatrix::beforeFinishSaving(std::string featurizedDatabaseDir) {
 	}
 }
 
+// Extn-2
 void* RGCoOccFullFeaturizer::getFeature(const cv::Mat& img) {
 	RGHistogramFeaturizer rg(bucketSize);
 	auto* colorHist = static_cast<std::vector<double>*>(rg.getFeature(img));
