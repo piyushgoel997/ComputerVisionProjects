@@ -3,6 +3,7 @@
 #include <opencv2/highgui.hpp>
 
 #include "Tasks.h"
+#include "Cleanup.h"
 
 int main() {
 	cv::VideoCapture* capDev;
@@ -28,12 +29,20 @@ int main() {
 		cv::Mat thresh(frame.size(), CV_8UC1);
 		threshold<cv::Vec3b>(frame, thresh, 200.0);
 
+		// cleanup the video
+		// TODO refine this
+		cv::Mat temp(frame.size(), CV_8UC1);
+		cv::Mat cleaned(frame.size(), CV_8UC1);
+		opening(thresh, temp, 8, 4);
+		closing(temp, cleaned, 8, 4);
+
 		cv::Mat segmented(frame.size(), CV_8UC3);
-		segmentAndColorRegions(thresh, segmented);
+		segmentAndColorRegions(cleaned, segmented);
 
 		cv::imshow("original_video", frame);
 		cv::imshow("thresholded_video", thresh);
 		cv::imshow("segmented_video", segmented);
+		
 		auto k = cv::waitKey(10);
 		if (k == 'q') { break; }
 		if (k == 's') {
