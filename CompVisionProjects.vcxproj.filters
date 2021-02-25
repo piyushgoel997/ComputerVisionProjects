@@ -20,42 +20,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="proj-2\Matcher.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="proj-2\ImageFeaturizer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="proj-2\Metrics.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="proj-2\filters.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="proj-2\Testing.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="proj-2\Main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="proj-2\ImageFeaturizer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="proj-2\Metrics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="proj-2\Matcher.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="proj-2\filters.cpp">
+    <ClCompile Include="proj-3\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="proj-2\Text.txt">
-      <Filter>Resource Files</Filter>
-    </Text>
+    <ClInclude Include="proj-3\Tasks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
