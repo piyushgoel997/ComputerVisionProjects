@@ -28,5 +28,8 @@
     <ClInclude Include="proj-3\Tasks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="proj-3\Cleanup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

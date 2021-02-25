@@ -149,6 +149,7 @@
     <ClCompile Include="proj-3\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="proj-3\Cleanup.h" />
     <ClInclude Include="proj-3\Tasks.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
