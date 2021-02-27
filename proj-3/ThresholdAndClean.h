@@ -1,6 +1,31 @@
 #pragma once
 #include <opencv2/core.hpp>
 
+
+/**
+ * @brief thresholds (by making sure all color values are greater than the threshold) src and returns the result in dst. The background will be made black.
+ * @tparam T has to be of the type cv::Vec with size 3
+ * @param src the matrix to be threshold-ed (the matrix is of the type T)
+ * @param dst the matrix which will contain the result (this matrix should always be of the type uchar)
+ * @param t_up upper threshold
+ * @param t_low lower threshold
+*/
+template <typename T>
+static void threshold(cv::Mat& src, cv::Mat& dst, const double t_up, const double t_low = 0) {
+	for (auto i = 0; i < src.rows; ++i) {
+		for (auto j = 0; j < src.cols; ++j) {
+			if ((src.at<T>(i, j)[0] > t_up && src.at<T>(i, j)[1] > t_up && src.at<T>(i, j)[2] > t_up) ||
+				(src.at<T>(i, j)[0] < t_low && src.at<T>(i, j)[1] < t_low && src.at<T>(i, j)[2] < t_low)) {
+				dst.at<uchar>(i, j) = 0;
+			}
+			else { dst.at<uchar>(i, j) = 255; }
+		}
+	}
+}
+
+
+// Code for cleaning
+
 /**
  * @brief A helper which can perform both (erosion and dilation) depending on the value of the integer c (0 or 255).
  * @param src source matrix (type uchar)
@@ -59,7 +84,7 @@ static void dilate(const cv::Mat& src, cv::Mat& dst, const int connectivity) { h
  * @param erosionConn connectivity to use while eroding
  * @param dilationConn connectivity to use while dilating
 */
-void opening(cv::Mat& src, cv::Mat& dst, int erosionConn, int dilationConn) {
+static void opening(cv::Mat& src, cv::Mat& dst, int erosionConn, int dilationConn) {
 	cv::Mat temp(src.size(), CV_8UC1);
 	erode(src, temp, erosionConn);
 	dilate(temp, dst, dilationConn);
@@ -72,7 +97,7 @@ void opening(cv::Mat& src, cv::Mat& dst, int erosionConn, int dilationConn) {
  * @param erosionConn connectivity to use while eroding
  * @param dilationConn connectivity to use while dilating
 */
-void closing(cv::Mat& src, cv::Mat& dst, int dilationConn, int erosionConn) {
+static void closing(cv::Mat& src, cv::Mat& dst, int dilationConn, int erosionConn) {
 	cv::Mat temp(src.size(), CV_8UC1);
 	dilate(src, temp, dilationConn);
 	erode(temp, dst, erosionConn);
