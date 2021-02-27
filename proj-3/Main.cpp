@@ -2,10 +2,11 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 
-#include "Tasks.h"
-#include "Cleanup.h"
+#include "Segmentation.h"
+#include "ThresholdAndClean.h"
+#include "Features.h"
 
-int main() {
+int main(int argc, char *argv[]) {
 	cv::VideoCapture* capDev;
 	capDev = new cv::VideoCapture(0);
 	if (!capDev->isOpened()) {
@@ -27,21 +28,35 @@ int main() {
 		// threshold the video
 		// TODO do thresholding with the histogram and k-means
 		cv::Mat thresh(frame.size(), CV_8UC1);
-		threshold<cv::Vec3b>(frame, thresh, 200.0);
+		threshold<cv::Vec3b>(frame, thresh, 0.6*255);
 
 		// cleanup the video
-		// TODO refine this
-		cv::Mat temp(frame.size(), CV_8UC1);
+		// TODO do grassfire cleaning instead for extension
+		// cv::Mat temp(frame.size(), CV_8UC1);
 		cv::Mat cleaned(frame.size(), CV_8UC1);
-		opening(thresh, temp, 8, 4);
-		closing(temp, cleaned, 8, 4);
+		// opening(thresh, temp, 8, 4);
+		// closing(temp, cleaned, 8, 4);
+		grassfireClean(thresh, cleaned, 3);
 
-		cv::Mat segmented(frame.size(), CV_8UC3);
-		segmentAndColorRegions(cleaned, segmented);
+		// cv::Mat colored(frame.size(), CV_8UC3);
+		// segmentAndColorRegions(cleaned, colored,8, 1);
+		// cv::Mat labels;
+		// cv::connectedComponents(cleaned, labels);
+		// auto* listOfCoords = getListOfCoordsForEachRegion(labels);
 
-		cv::imshow("original_video", frame);
+		// for (auto regionCoords : *listOfCoords) {
+		// 	std::vector<double> features;
+		// 	getFeatures(regionCoords, features);
+		// 	for (auto f : features) {
+		// 		std::cout << f << " ";
+		// 	}
+		// 	std::cout << std::endl;
+		// }
+		
+		// cv::imshow("original_video", frame);
 		cv::imshow("thresholded_video", thresh);
-		cv::imshow("segmented_video", segmented);
+		cv::imshow("cleaned", cleaned);
+		// cv::imshow("segmented_video", colored);
 		
 		auto k = cv::waitKey(10);
 		if (k == 'q') { break; }

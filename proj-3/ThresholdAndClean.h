@@ -1,10 +1,11 @@
 #pragma once
 #include <opencv2/core.hpp>
 
+// bkg is black (0) and foreground is white (255)
 
 /**
  * @brief thresholds (by making sure all color values are greater than the threshold) src and returns the result in dst. The background will be made black.
- * @tparam T has to be of the type cv::Vec with size 3
+ * @tparam T has to be the type of src (of the type cv::Vec with size 3)
  * @param src the matrix to be threshold-ed (the matrix is of the type T)
  * @param dst the matrix which will contain the result (this matrix should always be of the type uchar)
  * @param t_up upper threshold
@@ -56,7 +57,7 @@ static void helper(const cv::Mat& src, cv::Mat& dst, const int connectivity, con
 			if (j < src.cols - 1 && src.at<uchar>(i, j + 1) == c) { doIt = true; }
 			// now erode/dilate if needed
 			if (doIt) { dst.at<uchar>(i, j) = c; }
-			else { dst.at<uchar>(i, j) = src.at<uchar>(i,j); }
+			else { dst.at<uchar>(i, j) = src.at<uchar>(i, j); }
 		}
 	}
 }
@@ -104,3 +105,106 @@ static void closing(cv::Mat& src, cv::Mat& dst, int dilationConn, int erosionCon
 }
 
 
+// Grassfire transform - extn
+
+static void grassfireTransform(cv::Mat& src, cv::Mat& dst, int c, int connectivity) {
+	// pass one
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			if (src.at<uchar>(i, j) == c) { dst.at<int>(i, j) = 0; }
+			else {
+				int m = INT32_MAX;
+				if (i > 0) { m = std::min(m, dst.at<int>(i - 1, j) + 1); }
+				else { m = std::min(m, c + 1); }
+				if (j > 0) { m = std::min(m, dst.at<int>(i, j - 1) + 1); }
+				else { m = std::min(m, c + 1); }
+
+				if (connectivity == 8 && i > 0) {
+					if (j > 0) { m = std::min(m, dst.at<int>(i - 1, j - 1) + 1); }
+					if (j < src.cols - 1) { m = std::min(m, dst.at<int>(i - 1, j + 1) + 1); }
+				}
+				dst.at<int>(i, j) = m;
+			}
+		}
+	}
+
+	// pass 2
+	for (int i = src.rows - 1; i > -1; --i) {
+		for (int j = src.cols - 1; j > -1; --j) {
+			if (src.at<uchar>(i, j) == c) { dst.at<int>(i, j) = 0; }
+			else {
+				int m = dst.at<int>(i, j);
+				if (i < src.rows - 1) { m = std::min(m, dst.at<int>(i + 1, j) + 1); }
+				else { m = std::min(m, c + 1); }
+				if (j < src.cols - 1) { m = std::min(m, dst.at<int>(i, j + 1) + 1); }
+				else { m = std::min(m, c + 1); }
+
+				if (connectivity == 8 && i < src.rows - 1) {
+					if (j < src.cols - 1) { m = std::min(m, dst.at<int>(i + 1, j + 1) + 1); }
+					if (j > 0) { m = std::min(m, dst.at<int>(i + 1, j - 1) + 1); }
+				}
+				dst.at<int>(i, j) = m;
+			}
+		}
+	}
+}
+
+static void grassfireOpen(cv::Mat& src, cv::Mat& dst, const int distToRemove, const int erosionConn = 4,
+                          const int dilationConn = 8) {
+	// erosion
+	cv::Mat op(src.size(), CV_32SC1);
+	cv::Mat temp(src.size(), CV_8UC1);
+	grassfireTransform(src, op, 0, erosionConn);
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			if (op.at<int>(i, j) <= distToRemove) { temp.at<uchar>(i, j) = 0; }
+			else { temp.at<uchar>(i, j) = src.at<uchar>(i, j); }
+		}
+	}
+
+	// dilation
+	cv::Mat cl(src.size(), CV_32SC1);
+	grassfireTransform(temp, cl, 255, dilationConn);
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			if (cl.at<int>(i, j) <= distToRemove) { dst.at<uchar>(i, j) = 255; }
+			else { dst.at<uchar>(i, j) = src.at<uchar>(i, j); }
+		}
+	}
+}
+
+static void grassfireClose(cv::Mat& src, cv::Mat& dst, const int distToRemove, const int dilationConn = 4,
+                           const int erosionConn = 8) {
+	// dilation
+	cv::Mat cl(src.size(), CV_32SC1);
+	cv::Mat temp(src.size(), CV_8UC1);
+	grassfireTransform(src, cl, 255, dilationConn);
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			if (cl.at<int>(i, j) <= distToRemove) { temp.at<uchar>(i, j) = 255; }
+			else { temp.at<uchar>(i, j) = src.at<uchar>(i, j); }
+		}
+	}
+
+	// erosion
+	cv::Mat op(src.size(), CV_32SC1);
+	grassfireTransform(src, op, 0, erosionConn);
+	for (int i = 0; i < src.rows; ++i) {
+		for (int j = 0; j < src.cols; ++j) {
+			if (op.at<int>(i, j) <= distToRemove) { dst.at<uchar>(i, j) = 0; }
+			else { dst.at<uchar>(i, j) = src.at<uchar>(i, j); }
+		}
+	}
+}
+
+/**
+ * @brief Cleans the image by running one pass of grassfire transform for closing and opening. Treats outside the image as the background.
+ * @param src the image to be cleaned
+ * @param dst the cleaned image
+ * @param distToRemove the distance value <= which would be eroded or dilated to clean
+*/
+static void grassfireClean(cv::Mat& src, cv::Mat& dst, const int distToRemove) {
+	cv::Mat temp(src.size(), CV_8UC1);
+	grassfireOpen(src, temp, distToRemove);
+	grassfireClose(temp, dst, distToRemove);
+}
