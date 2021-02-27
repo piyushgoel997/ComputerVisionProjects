@@ -3,9 +3,9 @@
 #include <opencv2/imgproc.hpp>
 
 // ref: https://docs.opencv.org/3.4/de/d01/samples_2cpp_2connected_components_8cpp-example.html
-// task 2
+// task 2 - only selects and colors top N components
 // TODO implement own connected components algorithm
-void segmentAndColorRegions(cv::Mat& src, cv::Mat& dst, int connectivity = 4) {
+static void segmentAndColorRegions(cv::Mat& src, cv::Mat& dst, int connectivity = 4, int N=1) {
 	srand(1);
 	cv::Mat labels;
 	cv::Mat stats;
@@ -13,10 +13,16 @@ void segmentAndColorRegions(cv::Mat& src, cv::Mat& dst, int connectivity = 4) {
 	int numLabels = cv::connectedComponentsWithStats(src, labels, stats, centroids);
 	std::vector<cv::Vec3b> colors(numLabels);
 	colors[0] = cv::Vec3b(0, 0, 0); // black for the bkg
+	std::vector<int> sortedArea;
+	for (int i = 0; i < numLabels; ++i) {
+		sortedArea.push_back(stats.at<int>(i, cv::CC_STAT_AREA));
+	}
+	std::sort(sortedArea.rbegin(), sortedArea.rend());
 	for (int i = 1; i < numLabels; ++i) {
-		// TODO instead select top N
-		if (stats.at<int>(i, cv::CC_STAT_AREA) < 2000) { colors[i] = cv::Vec3b(0, 0, 0); }
-		else { colors[i] = cv::Vec3b((rand() & 255), (rand() & 255), (rand() & 255)); }
+		if (N >= numLabels || stats.at<int>(i, cv::CC_STAT_AREA) >= sortedArea.at(N)) {
+			colors[i] = cv::Vec3b((rand() & 255), (rand() & 255), (rand() & 255));
+		}
+		else { colors[i] = cv::Vec3b(0, 0, 0); }
 	}
 
 	for (auto i = 0; i < src.rows; ++i) {
@@ -29,7 +35,7 @@ void segmentAndColorRegions(cv::Mat& src, cv::Mat& dst, int connectivity = 4) {
  * @param labels A cv matrix (of the type int) for the image with each
  * @return A list of list of pairs of integers
 */
-std::vector<std::vector<std::pair<int, int>>>* getListOfCoordsForEachRegion(cv::Mat& labels) {
+static std::vector<std::vector<std::pair<int, int>>>* getListOfCoordsForEachRegion(cv::Mat& labels) {
 	auto* listOfCoords = new std::vector<std::vector<std::pair<int, int>>>;
 	for (int i = 0; i < labels.rows; ++i) {
 		for (int j = 0; j < labels.cols; ++j) {
@@ -47,4 +53,3 @@ std::vector<std::vector<std::pair<int, int>>>* getListOfCoordsForEachRegion(cv::
 	}
 	return listOfCoords;
 }
-
