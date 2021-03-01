@@ -1,8 +1,13 @@
 #pragma once
 
 #include <vector>
-#include <algorithm>
 #define M_PI 3.14159265358979323846
+
+template <typename T>
+static T min(T a, T b) { return a > b ? b : a; }
+
+template <typename T>
+static T max(T a, T b) { return a < b ? b : a; }
 
 // define a generic moment function
 static double moment(std::vector<std::pair<int, int>>& vector, int p, int q) {
@@ -63,27 +68,26 @@ static void projectPoints(std::vector<std::pair<T, T>>& points, std::vector<std:
 	for (const auto [x, y] : points) {
 		projected.push_back({
 			cos(alpha) * (1.0 * x - c_x) + sin(alpha) * (1.0 * y - c_y),
-			- sin(alpha) * (1.0 * x - c_x) + cos(alpha) * (1.0 * y - c_y)
+			-sin(alpha) * (1.0 * x - c_x) + cos(alpha) * (1.0 * y - c_y)
 		});
 	}
 }
 
 // get the dims of bounding box [min_x, miny_y, max_x, max_y]
 template <typename T>
-static T* boundingBoxDims(std::vector<std::pair<T, T>>& points) {
-	T bb[4] = {0, 0, 0, 0};
+static void boundingBoxDims(std::vector<std::pair<T, T>>& points, T* bb) {
 	for (const auto [x, y] : points) {
-		bb[0] = std::min(x, bb[0]);
-		bb[1] = std::min(y, bb[1]);
-		bb[2] = std::max(x, bb[2]);
-		bb[3] = std::max(y, bb[3]);
+		bb[0] = min<T>(x, bb[0]);
+		bb[1] = min<T>(y, bb[1]);
+		bb[2] = max<T>(x, bb[2]);
+		bb[3] = max<T>(y, bb[3]);
 	}
-	return bb;
 }
 
 // function which creates the bounding box
-void createBoundingBox(double boundingBoxDims[4], std::vector<std::pair<int, int>>* boundingBoxCorners, double alpha,
-                       std::pair<int, int> centroid) {
+static void createBoundingBox(double boundingBoxDims[4], std::vector<std::pair<int, int>>* boundingBoxCorners,
+                              double alpha,
+                              std::pair<int, int> centroid) {
 	std::vector<std::pair<double, double>> points;
 	points.push_back({boundingBoxDims[2], boundingBoxDims[3]});
 	points.push_back({boundingBoxDims[2], boundingBoxDims[1]});
@@ -93,19 +97,21 @@ void createBoundingBox(double boundingBoxDims[4], std::vector<std::pair<int, int
 	projectPoints<double>(points, projectedBack, -alpha, {0, 0});
 	auto c_x = centroid.first;
 	auto c_y = centroid.second;
-	for (auto [x,y] : projectedBack) { boundingBoxCorners->push_back({x + c_x, y + c_y}); }
+	for (auto [x, y] : projectedBack) { boundingBoxCorners->push_back({x + c_x, y + c_y}); }
 }
 
 template <typename T>
-void normalizedHistogramOfXAndY(std::vector<std::pair<T, T>> points, std::vector<double>& histogram,
-                                double boundingBoxDims[4], int numBuckets) {
-	for (auto [x,y] : points) {
-		histogram[std::min(numBuckets - 1,
-		                   numBuckets * (x - boundingBoxDims[0]) / (boundingBoxDims[2] - boundingBoxDims[0]
-		                   ))] += 1;
-		histogram[std::min(numBuckets - 1,
-		                   numBuckets * (y - boundingBoxDims[1]) / (boundingBoxDims[3] - boundingBoxDims[1]
-		                   )) + numBuckets] += 1;
+static void normalizedHistogramOfXAndY(std::vector<std::pair<T, T>> points, std::vector<double>& histogram,
+                                       double boundingBoxDims[4],int numBuckets) {
+	for (auto [x, y] : points) {
+		auto a = static_cast<int>((1.0 * numBuckets) * ((1.0 * x - boundingBoxDims[0]) / (boundingBoxDims[2] -
+			boundingBoxDims[0])));
+		histogram[min<double>(numBuckets - 1,
+		                      numBuckets * (1.0 * x - boundingBoxDims[0]) / (boundingBoxDims[2] - boundingBoxDims[0]
+		                      ))] += 1;
+		histogram[min<double>(numBuckets - 1,
+		                      numBuckets * (1.0 * y - boundingBoxDims[1]) / (boundingBoxDims[3] - boundingBoxDims[1]
+		                      )) + numBuckets] += 1;
 	}
 	// normalize
 	auto sumX = 0.0;
@@ -134,7 +140,8 @@ static std::vector<std::pair<int, int>>* getFeatures(std::vector<std::pair<int, 
 	projectPoints<int>(points, projected, alpha, centroid);
 
 	// ht/wd of the bounding box
-	auto* bb = boundingBoxDims<double>(projected);
+	double bb[4] = { 0,0,0,0 };
+	boundingBoxDims<double>(projected, bb);
 	auto bb_h = bb[2] - bb[0];
 	auto bb_w = bb[3] - bb[1];
 	features.push_back((bb_h) / (bb_w));
@@ -145,10 +152,10 @@ static std::vector<std::pair<int, int>>* getFeatures(std::vector<std::pair<int, 
 	// TODO histogram of projection (16 buckets wide)
 	int numBuckets = 16;
 	std::vector<double> histogram(2 * numBuckets, 0.0);
-	normalizedHistogramOfXAndY(projected, histogram, bb, numBuckets);
+	normalizedHistogramOfXAndY<double>(projected, histogram, bb, numBuckets);
 	for (auto h : histogram) { features.push_back(h); }
 
-	std::vector<std::pair<int, int>>* boundingBoxCorners;
+	auto* boundingBoxCorners = new std::vector<std::pair<int, int>>;
 	createBoundingBox(bb, boundingBoxCorners, alpha, centroid);
 	return boundingBoxCorners;
 }
