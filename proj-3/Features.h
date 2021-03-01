@@ -4,9 +4,6 @@
 #include <algorithm>
 #define M_PI 3.14159265358979323846
 
-// TODO what should f(x,y) be?
-
-
 // define a generic moment function
 static double moment(std::vector<std::pair<int, int>>& vector, int p, int q) {
 	auto m = 0.0;
@@ -58,8 +55,9 @@ static double mu22Alpha(std::vector<std::pair<int, int>>& vector, double alpha, 
 }
 
 // project points to the new co-ordinate system with the centroid as the origin
-static void projectPoints(std::vector<std::pair<int, int>>& points, std::vector<std::pair<double, double>>& projected,
-                   double alpha, std::pair<int, int> centroid) {
+template <typename T>
+static void projectPoints(std::vector<std::pair<T, T>>& points, std::vector<std::pair<double, double>>& projected,
+                          double alpha, std::pair<T, T> centroid) {
 	auto c_x = centroid.first;
 	auto c_y = centroid.second;
 	for (const auto [x, y] : points) {
@@ -83,10 +81,49 @@ static T* boundingBoxDims(std::vector<std::pair<T, T>>& points) {
 	return bb;
 }
 
-// one function which creates the bounding box
+// function which creates the bounding box
+void createBoundingBox(double boundingBoxDims[4], std::vector<std::pair<int, int>>* boundingBoxCorners, double alpha,
+                       std::pair<int, int> centroid) {
+	std::vector<std::pair<double, double>> points;
+	points.push_back({boundingBoxDims[2], boundingBoxDims[3]});
+	points.push_back({boundingBoxDims[2], boundingBoxDims[1]});
+	points.push_back({boundingBoxDims[0], boundingBoxDims[1]});
+	points.push_back({boundingBoxDims[0], boundingBoxDims[3]});
+	std::vector<std::pair<double, double>> projectedBack;
+	projectPoints<double>(points, projectedBack, -alpha, {0, 0});
+	auto c_x = centroid.first;
+	auto c_y = centroid.second;
+	for (auto [x,y] : projectedBack) { boundingBoxCorners->push_back({x + c_x, y + c_y}); }
+}
+
+template <typename T>
+void normalizedHistogramOfXAndY(std::vector<std::pair<T, T>> points, std::vector<double>& histogram,
+                                double boundingBoxDims[4], int numBuckets) {
+	for (auto [x,y] : points) {
+		histogram[std::min(numBuckets - 1,
+		                   numBuckets * (x - boundingBoxDims[0]) / (boundingBoxDims[2] - boundingBoxDims[0]
+		                   ))] += 1;
+		histogram[std::min(numBuckets - 1,
+		                   numBuckets * (y - boundingBoxDims[1]) / (boundingBoxDims[3] - boundingBoxDims[1]
+		                   )) + numBuckets] += 1;
+	}
+	// normalize
+	auto sumX = 0.0;
+	auto sumY = 0.0;
+	for (int i = 0; i < numBuckets; ++i) {
+		sumX += histogram[i];
+		sumY += histogram[numBuckets + i];
+	}
+	for (int i = 0; i < numBuckets; ++i) {
+		histogram[i] /= sumX;
+		histogram[numBuckets + i] /= sumY;
+	}
+}
+
 
 // then the function which combines it all together and gets the feature
-static void getFeatures(std::vector<std::pair<int, int>>& points, std::vector<double>& features) {
+static std::vector<std::pair<int, int>>* getFeatures(std::vector<std::pair<int, int>>& points,
+                                                     std::vector<double>& features) {
 	auto alpha = findAlpha(points);
 	auto m00 = moment(points, 0, 0);
 	auto centroid = findCentroid(points, m00);
@@ -94,7 +131,7 @@ static void getFeatures(std::vector<std::pair<int, int>>& points, std::vector<do
 	features.push_back(mu22Alpha(points, alpha, m00));
 
 	std::vector<std::pair<double, double>> projected;
-	projectPoints(points, projected, alpha, centroid);
+	projectPoints<int>(points, projected, alpha, centroid);
 
 	// ht/wd of the bounding box
 	auto* bb = boundingBoxDims<double>(projected);
@@ -106,4 +143,12 @@ static void getFeatures(std::vector<std::pair<int, int>>& points, std::vector<do
 	features.push_back(m00 / (bb_h * bb_w));
 
 	// TODO histogram of projection (16 buckets wide)
+	int numBuckets = 16;
+	std::vector<double> histogram(2 * numBuckets, 0.0);
+	normalizedHistogramOfXAndY(projected, histogram, bb, numBuckets);
+	for (auto h : histogram) { features.push_back(h); }
+
+	std::vector<std::pair<int, int>>* boundingBoxCorners;
+	createBoundingBox(bb, boundingBoxCorners, alpha, centroid);
+	return boundingBoxCorners;
 }
