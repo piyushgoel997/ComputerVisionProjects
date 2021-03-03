@@ -3,8 +3,6 @@
 
 // bkg is black (0) and foreground is white (255)
 
-// TODO do thresholding with the histogram and k-means
-
 /**
  * @brief thresholds (by making sure all color values are greater than the threshold) src and returns the result in dst. The background will be made black.
  * @tparam T has to be the type of src (of the type cv::Vec with size 3)

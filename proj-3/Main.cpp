@@ -56,14 +56,15 @@ int main(int argc, char* argv[]) {
 				cv::Point p(x, y);
 				points.push_back(p);
 			}
-
 			
 			cv::line(colored, points.at(0), points.at(1), cv::Scalar(0, 255, 0), 2);
 			cv::line(colored, points.at(1), points.at(2), cv::Scalar(0, 255, 0), 2);
 			cv::line(colored, points.at(2), points.at(3), cv::Scalar(0, 255, 0), 2);
 			cv::line(colored, points.at(3), points.at(0), cv::Scalar(0, 255, 0), 2);
 
-			cv::circle(colored, points.at(4), 2, cv::Scalar(0, 255, 0), 2);
+			cv::line(colored, points.at(4), points.at(5), cv::Scalar(0, 255, 0), 2);
+
+			cv::circle(colored, points.at(6), 2, cv::Scalar(0, 255, 255), 2);
 			count++;
 			std::cout << "size" << features.size() << std::endl;
 		}

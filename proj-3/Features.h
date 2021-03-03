@@ -84,8 +84,8 @@ static void boundingBoxDims(std::vector<std::pair<T, T>>& points, T* bb) {
 	}
 }
 
-// function which creates the bounding box
-static void createBoundingBox(double boundingBoxDims[4], std::vector<std::pair<int, int>>* boundingBoxCorners,
+// function which creates projects back the bounding box corners and the end points of a line segment for the central axis.
+static void getOutputPoints(double boundingBoxDims[4], std::vector<std::pair<int, int>>* boundingBoxCorners,
                               double alpha,
                               std::pair<int, int> centroid) {
 	std::vector<std::pair<double, double>> points;
@@ -93,6 +93,8 @@ static void createBoundingBox(double boundingBoxDims[4], std::vector<std::pair<i
 	points.push_back({boundingBoxDims[2], boundingBoxDims[1]});
 	points.push_back({boundingBoxDims[0], boundingBoxDims[1]});
 	points.push_back({boundingBoxDims[0], boundingBoxDims[3]});
+	points.push_back({ boundingBoxDims[0] - 5, 0 });
+	points.push_back({ boundingBoxDims[2] + 5, 0 });
 	std::vector<std::pair<double, double>> projectedBack;
 	auto c_x = centroid.first;
 	auto c_y = centroid.second;
@@ -100,6 +102,7 @@ static void createBoundingBox(double boundingBoxDims[4], std::vector<std::pair<i
 	for (auto [x, y] : projectedBack) { boundingBoxCorners->push_back({x + c_x, y + c_y}); }
 }
 
+// creates a normalized bucketed histogram of the number of pixels when projected to the X and Y axes
 template <typename T>
 static void normalizedHistogramOfXAndY(std::vector<std::pair<T, T>> points, std::vector<double>& histogram,
                                        double boundingBoxDims[4],int numBuckets) {
@@ -128,6 +131,7 @@ static void normalizedHistogramOfXAndY(std::vector<std::pair<T, T>> points, std:
 
 
 // then the function which combines it all together and gets the feature
+// also returns the corner points of the bounding box, end points of a line segment for the central axis and the centroid (in that order).
 static std::vector<std::pair<int, int>>* getFeatures(std::vector<std::pair<int, int>>& points,
                                                      std::vector<double>& features) {
 	auto alpha = findAlpha(points);
@@ -156,7 +160,7 @@ static std::vector<std::pair<int, int>>* getFeatures(std::vector<std::pair<int, 
 	for (auto h : histogram) { features.push_back(h); }
 
 	auto* outputPoints = new std::vector<std::pair<int, int>>;
-	createBoundingBox(bb, outputPoints, alpha, centroid);
+	getOutputPoints(bb, outputPoints, alpha, centroid);
 	outputPoints->push_back({ centroid.first, centroid.second });
 	return outputPoints;
 }
