@@ -26,12 +26,18 @@
     <ClCompile Include="proj-3\Features.h">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="proj-3\DataBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="proj-3\ThresholdAndClean.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="proj-3\Segmentation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="proj-3\DataBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -146,10 +146,12 @@
     <None Include=".gitignore" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="proj-3\DataBase.cpp" />
     <ClCompile Include="proj-3\Features.h" />
     <ClCompile Include="proj-3\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="proj-3\DataBase.hpp" />
     <ClInclude Include="proj-3\ThresholdAndClean.h" />
     <ClInclude Include="proj-3\Segmentation.h" />
   </ItemGroup>
