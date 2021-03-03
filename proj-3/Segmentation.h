@@ -103,7 +103,7 @@ public:
 	 * @brief segments the image into regions
 	 * @param img has to be a greyscale image of type CV_8UC1 (single uchar)
 	 * @param ignoreArea the areas with less than this many pixels will be ignored
-	 * @param N only this many top regions will be considered
+	 * @param N only this many top regions will be considered at most
 	*/
 	Segmentation(cv::Mat* img, int ignoreArea = 1000, int N = 1) : ignoreArea(ignoreArea), N(N) {
 		labels = new cv::Mat(img->size(), CV_32SC1, cv::Scalar(0));
@@ -117,7 +117,8 @@ public:
 	void getListOfCoordsForEachRegion(std::vector<std::vector<std::pair<int, int>>>* listOfCoords) {
 		for (int i = 0; i < labels->rows; ++i) {
 			for (int j = 0; j < labels->cols; ++j) {
-				if (labels->at<int>(i, j) >= listOfCoords->size()) {
+				if (labels->at<int>(i, j) == 0) { continue; }
+				if (labels->at<int>(i, j) > listOfCoords->size()) {
 					std::vector<std::pair<int, int>> vec;
 					// flip i and j because y corresponds to the row and x corresponds to the col
 					vec.emplace_back(j, i);
@@ -125,7 +126,7 @@ public:
 				}
 				else {
 					// used .emplace_back instead of .push_back(std::pair<int, int>(i, j))
-					listOfCoords->at(labels->at<int>(i, j)).emplace_back(j, i);
+					listOfCoords->at(labels->at<int>(i, j) - 1).emplace_back(j, i);
 				}
 			}
 		}
@@ -137,12 +138,12 @@ public:
 
 		std::vector<cv::Vec3b> colors(numLabels + 1);
 		colors[0] = cv::Vec3b(0, 0, 0); // black for the bkg
-		for (int i = 1; i < numLabels + 1; ++i) { colors[i] = cv::Vec3b((rand() & 255), (rand() & 255), (rand() & 255)); }
+		for (int i = 1; i < numLabels + 1; ++i) {
+			colors[i] = cv::Vec3b((rand() & 255), (rand() & 255), (rand() & 255));
+		}
 
 		for (auto i = 0; i < dst.rows; ++i) {
-			for (auto j = 0; j < dst.cols; ++j) {
-				dst.at<cv::Vec3b>(i, j) = colors[labels->at<int>(i, j)];
-			}
+			for (auto j = 0; j < dst.cols; ++j) { dst.at<cv::Vec3b>(i, j) = colors[labels->at<int>(i, j)]; }
 		}
 	}
 
@@ -166,7 +167,7 @@ private:
 				}
 			}
 		}
-		auto* areas = new std::vector<int>(regions+1, 0);
+		auto* areas = new std::vector<int>(regions + 1, 0);
 
 		for (int i = 1; i < img->rows - 1; ++i) {
 			for (int j = 1; j < img->cols - 1; ++j) {
@@ -181,17 +182,14 @@ private:
 		std::sort(sortedAreas.rbegin(), sortedAreas.rend());
 
 		std::vector<int> labelMap(1000, 0);
-		numLabels = regions;		
 		regions = 0;
 
 		for (auto i = 0; i < labels->rows; ++i) {
 			for (auto j = 0; j < labels->cols; ++j) {
 				auto l = labels->at<int>(i, j);
-				if ((N < regions && areas->at(l) < sortedAreas.at(N)) || areas->at(l) <= ignoreArea) {
-					labels->at<int>(i, j) = 0;
-					continue;
+				if (labelMap[l] == 0 && regions < N && areas->at(l) > ignoreArea && areas->at(l) > sortedAreas.at(N)) {
+					labelMap[l] = ++regions;
 				}
-				if (labelMap[l] == 0) { labelMap[l] = ++regions; }
 				labels->at<int>(i, j) = labelMap[l];
 			}
 		}

@@ -9,7 +9,7 @@
 
 int main(int argc, char* argv[]) {
 	cv::VideoCapture* capDev;
-	capDev = new cv::VideoCapture(1);
+	capDev = new cv::VideoCapture(0);
 	if (!capDev->isOpened()) {
 		std::cout << "Can't open Video device" << std::endl;
 		return -1;
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 		features.clear();
 
 		*capDev >> frame;
-		// cv::resize(frame, frame, cv::Size(), 0.50, 0.50);
+		cv::resize(frame, frame, cv::Size(), 0.50, 0.50);
 		// threshold the video
 		cv::Mat thresh(frame.size(), CV_8UC1);
 		threshold<cv::Vec3b>(frame, thresh, 0.4 * 255);
@@ -40,15 +40,17 @@ int main(int argc, char* argv[]) {
 		// closing(temp, cleaned, 8, 4);
 		grassfireClean(thresh, cleaned, 3);
 
-		Segmentation seg(&cleaned, 100, 1);
+		Segmentation seg(&cleaned, 100, 10);
 		auto* listOfCoords = new std::vector<std::vector<std::pair<int, int>>>;
 		seg.getListOfCoordsForEachRegion(listOfCoords);
+		
+		std::cout << "THIS   " <<listOfCoords->size()<<std::endl;
 
 		cv::Mat colored(frame.size(), CV_8UC3);
 		seg.colorRegions(colored);
 		int count = 0;
 		for (auto regionCoords : *listOfCoords) {
-			if (regionCoords.size() < 1000 || (regionCoords.at(0).first==0&& regionCoords.at(0).second == 0)) { continue; }
+			// if (regionCoords.size() < 1000 || (regionCoords.at(0).first==0&& regionCoords.at(0).second == 0)) { continue; }
 			auto* bb = getFeatures(regionCoords, features);
 
 			std::vector<cv::Point> points;
@@ -67,6 +69,7 @@ int main(int argc, char* argv[]) {
 			cv::circle(colored, points.at(6), 2, cv::Scalar(0, 255, 255), 2);
 			count++;
 			std::cout << "size" << features.size() << std::endl;
+			delete bb;
 		}
 		char k = cv::waitKey(30);
 
