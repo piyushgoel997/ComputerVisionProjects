@@ -3,6 +3,8 @@
 
 // bkg is black (0) and foreground is white (255)
 
+// TODO do thresholding with the histogram and k-means
+
 /**
  * @brief thresholds (by making sure all color values are greater than the threshold) src and returns the result in dst. The background will be made black.
  * @tparam T has to be the type of src (of the type cv::Vec with size 3)
@@ -115,9 +117,9 @@ static void grassfireTransform(cv::Mat& src, cv::Mat& dst, int c, int connectivi
 			else {
 				int m = INT32_MAX;
 				if (i > 0) { m = std::min(m, dst.at<int>(i - 1, j) + 1); }
-				else { m = std::min(m, c + 1); }
+				else { m = std::min(m, 1); }
 				if (j > 0) { m = std::min(m, dst.at<int>(i, j - 1) + 1); }
-				else { m = std::min(m, c + 1); }
+				else { m = std::min(m,  1); }
 
 				if (connectivity == 8 && i > 0) {
 					if (j > 0) { m = std::min(m, dst.at<int>(i - 1, j - 1) + 1); }
@@ -135,9 +137,9 @@ static void grassfireTransform(cv::Mat& src, cv::Mat& dst, int c, int connectivi
 			else {
 				int m = dst.at<int>(i, j);
 				if (i < src.rows - 1) { m = std::min(m, dst.at<int>(i + 1, j) + 1); }
-				else { m = std::min(m, c + 1); }
+				else { m = std::min(m,  1); }
 				if (j < src.cols - 1) { m = std::min(m, dst.at<int>(i, j + 1) + 1); }
-				else { m = std::min(m, c + 1); }
+				else { m = std::min(m,  1); }
 
 				if (connectivity == 8 && i < src.rows - 1) {
 					if (j < src.cols - 1) { m = std::min(m, dst.at<int>(i + 1, j + 1) + 1); }

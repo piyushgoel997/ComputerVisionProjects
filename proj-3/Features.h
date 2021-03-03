@@ -94,9 +94,9 @@ static void createBoundingBox(double boundingBoxDims[4], std::vector<std::pair<i
 	points.push_back({boundingBoxDims[0], boundingBoxDims[1]});
 	points.push_back({boundingBoxDims[0], boundingBoxDims[3]});
 	std::vector<std::pair<double, double>> projectedBack;
-	projectPoints<double>(points, projectedBack, -alpha, {0, 0});
 	auto c_x = centroid.first;
 	auto c_y = centroid.second;
+	projectPoints<double>(points, projectedBack, -alpha, {0,0});
 	for (auto [x, y] : projectedBack) { boundingBoxCorners->push_back({x + c_x, y + c_y}); }
 }
 
@@ -149,13 +149,14 @@ static std::vector<std::pair<int, int>>* getFeatures(std::vector<std::pair<int, 
 	// % of the box filled
 	features.push_back(m00 / (bb_h * bb_w));
 
-	// TODO histogram of projection (16 buckets wide)
+	// histogram of projection (16 buckets wide)
 	int numBuckets = 16;
 	std::vector<double> histogram(2 * numBuckets, 0.0);
 	normalizedHistogramOfXAndY<double>(projected, histogram, bb, numBuckets);
 	for (auto h : histogram) { features.push_back(h); }
 
-	auto* boundingBoxCorners = new std::vector<std::pair<int, int>>;
-	createBoundingBox(bb, boundingBoxCorners, alpha, centroid);
-	return boundingBoxCorners;
+	auto* outputPoints = new std::vector<std::pair<int, int>>;
+	createBoundingBox(bb, outputPoints, alpha, centroid);
+	outputPoints->push_back({ centroid.first, centroid.second });
+	return outputPoints;
 }
