@@ -146,14 +146,8 @@
     <None Include=".gitignore" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="proj-3\DataBase.cpp" />
-    <ClCompile Include="proj-3\Features.h" />
-    <ClCompile Include="proj-3\Main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="proj-3\DataBase.hpp" />
-    <ClInclude Include="proj-3\ThresholdAndClean.h" />
-    <ClInclude Include="proj-3\Segmentation.h" />
+    <ClCompile Include="proj-4\Main.cpp" />
+    <ClCompile Include="proj-4\part-7.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
