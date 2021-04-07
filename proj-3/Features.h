@@ -154,11 +154,12 @@ static std::vector<std::pair<int, int>>* getFeatures(std::vector<std::pair<int, 
 	features.push_back(m00 / (bb_h * bb_w));
 
 	// histogram of projection (16 buckets wide)
+    /*
 	int numBuckets = 16;
 	std::vector<double> histogram(2 * numBuckets, 0.0);
 	normalizedHistogramOfXAndY<double>(projected, histogram, bb, numBuckets);
 	for (auto h : histogram) { features.push_back(h); }
-
+    */
 	auto* outputPoints = new std::vector<std::pair<int, int>>;
 	getOutputPoints(bb, outputPoints, alpha, centroid);
 	outputPoints->push_back({ centroid.first, centroid.second });
