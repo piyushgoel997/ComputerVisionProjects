@@ -29,6 +29,7 @@ def ssd(a, b):
 
 
 # D distances in the embedding space
+print("below are the distances of the first embedding from the rest of the embeddings")
 for row in embedding:
     print(ssd(row, embedding[0]))
 # pattern explained in the report
@@ -54,4 +55,4 @@ for t in test_pred:
         if s < min_ssd:
             min_ssd = s
             c = index_to_cat[cat[i][0]]
-    print(c)
+    print("The predicted class for this test example is", c, "with the least ssd being", min_ssd)
