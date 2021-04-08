@@ -9,7 +9,7 @@ np.random.seed(42)
 # This is a initializer that can be used to initialize layers with gabor filters.
 # Works with only single channel input.
 def gabor_initializer(shape, dtype=None):
-    thetas = [i * np.pi / shape[-1] for i in range(shape[-1])]
+    thetas = [i * 2 * np.pi / shape[-1] for i in range(shape[-1])]
     kernels = np.zeros(shape)
     for i, t in enumerate(thetas):
         # ref for the values used: http://amroamroamro.github.io/mexopencv/opencv/gabor_demo.html
@@ -28,6 +28,35 @@ def gaussian_initializer(shape, dtype=None):
         kernels[:, :, 0, i] = cv2.getGaussianKernel(shape[0], s)
     kernels = np.array(kernels).astype("float32").reshape(shape)
     return tf.convert_to_tensor(kernels)
+
+
+# copied from task 2
+def plot_filters(model, layer_number=0):
+    # A get the weights of the first layer of the model
+    first_layer_wts = model.get_layer(index=layer_number).weights[0]
+
+    # B plotting the filters
+    # Ref: https://matplotlib.org/devdocs/gallery/subplots_axes_and_figures/subplots_demo.html
+    # yellow means more positive values, and blue means more negative value
+    fig, axs = plt.subplots(8, 4, figsize=(8, 16))
+    for i in range(8):
+        for j in range(4):
+            wts = first_layer_wts[:, :, 0, 4 * i + j]
+            print(wts)
+            axs[i, j].imshow(wts)
+    plt.show()
+
+
+def build_and_apply_truncated_model(model, images, layer_number=0, example_number=0):
+    # D building a truncated model and applying it to the first layer
+    first_layer_model = tf.keras.Model(inputs=model.input, outputs=model.get_layer(index=layer_number).output)
+    img = images[example_number:example_number + 1]
+    pred = first_layer_model.predict(img)
+    fig, axs = plt.subplots(8, 4, figsize=(8, 16))
+    for i in range(8):
+        for j in range(4):
+            axs[i, j].imshow(pred[0, :, :, 4 * i + j])
+    plt.show()
 
 
 # train and test the model on the mnist dataset
@@ -105,11 +134,14 @@ def train_test_model(initializer, name, load_model=False):
     model.evaluate(test_files, test_files_labels)
     print(model.predict_classes(test_files))
 
+    plot_filters(model)
+    build_and_apply_truncated_model(model, train_images)
 
-train_test_model(gabor_initializer, "gabor_model")
+
+train_test_model(gabor_initializer, "gabor_model", load_model=True)
 # 10/10 [==============================] - 0s 11ms/sample - loss: 0.9860 - accuracy: 0.9000
 # [0 1 2 3 4 5 5 7 8 9]
 
-train_test_model(gaussian_initializer, "gaussian_model")
+train_test_model(gaussian_initializer, "gaussian_model", load_model=True)
 # 10/10 [==============================] - 0s 669us/sample - loss: 1.1747 - accuracy: 0.8000
 # [0 1 2 3 4 3 6 3 8 9]
