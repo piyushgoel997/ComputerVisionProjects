@@ -6,13 +6,26 @@ import tensorflow as tf
 np.random.seed(42)
 
 
-# This is a initializer that can be used to initialize layers with the gabor filters.
+# This is a initializer that can be used to initialize layers with gabor filters.
+# Works with only single channel input.
 def gabor_initializer(shape, dtype=None):
-    # ref: http://amroamroamro.github.io/mexopencv/opencv/gabor_demo.html
     thetas = [i * np.pi / shape[-1] for i in range(shape[-1])]
     kernels = np.zeros(shape)
     for i, t in enumerate(thetas):
+        # ref for the values used: http://amroamroamro.github.io/mexopencv/opencv/gabor_demo.html
         kernels[:, :, 0, i] = cv2.getGaborKernel(shape[:2], 4, t, 10, 0.5)
+    kernels = np.array(kernels).astype("float32").reshape(shape)
+    return tf.convert_to_tensor(kernels)
+
+
+# This is a initializer that can be used to initialize layers with gaussian filters.
+# Works with only single channel input.
+# Not very useful for this problem, but only implemented to showcase the generality of the code.
+def gaussian_initializer(shape, dtype=None):
+    kernels = np.zeros(shape)
+    sigmas = np.random.random(shape[-1])
+    for i, s in enumerate(sigmas):
+        kernels[:, :, 0, i] = cv2.getGaussianKernel(shape[0], s)
     kernels = np.array(kernels).astype("float32").reshape(shape)
     return tf.convert_to_tensor(kernels)
 
@@ -68,7 +81,10 @@ def train_test_model(initializer, name, load_model=False):
         # save model to a file
         model.save(str(name) + ".h5")
     else:
-        model = tf.keras.models.load_model(str(name) + ".h5", custom_objects={"gabor_initializer": gabor_initializer})
+        model = tf.keras.models.load_model(str(name) + ".h5", custom_objects={
+            "gabor_initializer": gabor_initializer,
+            "gaussian_initializer": gaussian_initializer
+        })
 
     # load the handwritten test files
     test_files = []
@@ -90,7 +106,10 @@ def train_test_model(initializer, name, load_model=False):
     print(model.predict_classes(test_files))
 
 
-train_test_model(gabor_initializer, "gabor_model", load_model=True)
-# test accuracy = 0.9
+train_test_model(gabor_initializer, "gabor_model")
 # 10/10 [==============================] - 0s 11ms/sample - loss: 0.9860 - accuracy: 0.9000
 # [0 1 2 3 4 5 5 7 8 9]
+
+train_test_model(gaussian_initializer, "gaussian_model")
+# 10/10 [==============================] - 0s 669us/sample - loss: 1.1747 - accuracy: 0.8000
+# [0 1 2 3 4 3 6 3 8 9]
