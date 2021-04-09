@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 
+# This function performs the task A, B and C. It plots the layer weights of the specified layer of the model and applies
+# it to the specified example image and plots the output.
 def plot_filters_and_filtered_output(model, images, layer_number=0, example_number=0):
     # A get the weights of the first layer of the model
     first_layer_wts = model.get_layer(index=layer_number).weights[0]
@@ -28,8 +30,8 @@ def plot_filters_and_filtered_output(model, images, layer_number=0, example_numb
     plt.show()
 
 
+# This functions builds a truncated model out of the complete model and applies it to the specified example and plots it
 def build_and_apply_truncated_model(model, images, layer_number=0, example_number=0):
-    # D building a truncated model and applying it to the first layer
     first_layer_model = tf.keras.Model(inputs=model.input, outputs=model.get_layer(index=layer_number).output)
     img = images[example_number:example_number + 1]
     img = img.reshape(*img.shape, 1)
@@ -41,10 +43,13 @@ def build_and_apply_truncated_model(model, images, layer_number=0, example_numbe
     plt.show()
 
 
+# load the data
 mnist_dataset = tf.keras.datasets.mnist
 (train_images, _), _ = mnist_dataset.load_data()
 loaded_model = tf.keras.models.load_model("../task1/my_model.h5")
+# Tasks A, B and C
 plot_filters_and_filtered_output(loaded_model, train_images)
+# D building a truncated model and applying it to the first layer
 build_and_apply_truncated_model(loaded_model, train_images)
 # E plot after adding in the second conv layer to the truncated model
 build_and_apply_truncated_model(loaded_model, train_images, layer_number=1)

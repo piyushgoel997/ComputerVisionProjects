@@ -80,6 +80,16 @@ model.save("my_model.h5")
 # load the model
 loaded_model = tf.keras.models.load_model("my_model.h5")
 
+# This function prints the predicted class, the class probabilities (or the model output) and the correct classes.
+def print_predictions(mod, test_imgs, lbls):
+    for p, c, l in zip(mod.predict(test_imgs), mod.predict_classes(test_imgs), lbls):
+        pr = [round(x, 2) for x in p]
+        print("The predicted digit is", c, "with the class probabilities", pr, "and the correct digit", np.argmax(l))
+
+
+# E print the predictions for the first 10 test examples
+print_predictions(loaded_model, test_images[:10], test_labels[:10])
+
 # F load the handwritten test files
 test_files = []
 for i in range(10):
@@ -97,4 +107,4 @@ test_files_labels = tf.keras.utils.to_categorical(test_files_labels, num_labels)
 
 # F evaluate the model on the handwritten test images
 loaded_model.evaluate(test_files, test_files_labels)
-print(model.predict_classes(test_files))
+print_predictions(loaded_model, test_files, test_files_labels)

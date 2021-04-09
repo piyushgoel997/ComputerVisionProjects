@@ -50,9 +50,12 @@ for k, v in category_map.items():
 for t in test_pred:
     min_ssd = 99999999
     c = -1
+    ss = {}
     for i, e in enumerate(embedding):
         s = ssd(e, t)
+        ss[s] = index_to_cat[cat[i][0]]
         if s < min_ssd:
             min_ssd = s
             c = index_to_cat[cat[i][0]]
     print("The predicted class for this test example is", c, "with the least ssd being", min_ssd)
+    print("And the sorted order of the ssds being", sorted(ss.items()))

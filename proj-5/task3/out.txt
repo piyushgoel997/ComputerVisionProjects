@@ -1,0 +1,63 @@
+Model: "model"
+_________________________________________________________________
+Layer (type)                 Output Shape              Param #   
+=================================================================
+conv2d_input (InputLayer)    [(None, 28, 28, 1)]       0         
+_________________________________________________________________
+conv2d (Conv2D)              (None, 26, 26, 32)        320       
+_________________________________________________________________
+conv2d_1 (Conv2D)            (None, 24, 24, 32)        9248      
+_________________________________________________________________
+max_pooling2d (MaxPooling2D) (None, 12, 12, 32)        0         
+_________________________________________________________________
+dropout (Dropout)            (None, 12, 12, 32)        0         
+_________________________________________________________________
+flatten (Flatten)            (None, 4608)              0         
+_________________________________________________________________
+dense (Dense)                (None, 128)               589952    
+=================================================================
+Total params: 599,520
+Trainable params: 599,520
+Non-trainable params: 0
+_________________________________________________________________
+(1, 128)
+below are the distances of the first embedding from the rest of the embeddings
+0.0
+44.969795
+98.630844
+115.42185
+135.18132
+83.23733
+99.29543
+100.8486
+135.71243
+206.12534
+141.85529
+138.67554
+178.18578
+170.52208
+172.91315
+143.63086
+168.37672
+209.78075
+257.08633
+165.8956
+183.57059
+243.93913
+222.12512
+190.62814
+175.11551
+205.18463
+218.69359
+The predicted class for this test example is alpha with the least ssd being 760.92596
+And the sorted order of the ssds being [(760.92596, 'alpha'), (764.24567, 'alpha'), (767.6239, 'alpha'), (777.9092, 'alpha'), (778.0696, 'beta'), (795.68274, 'alpha'), (797.49554, 'beta'), (797.58044, 'beta'), (803.1222, 'alpha'), (803.3125, 'alpha'), (805.5499, 'gamma'), (809.4066, 'beta'), (812.85394, 'beta'), (814.4122, 'alpha'), (823.8227, 'beta'), (831.39246, 'beta'), (832.56335, 'alpha'), (850.4369, 'beta'), (854.56573, 'gamma'), (855.3436, 'gamma'), (863.0204, 'gamma'), (867.57587, 'gamma'), (884.4514, 'gamma'), (892.9863, 'gamma'), (900.6026, 'gamma'), (900.66016, 'beta'), (915.2759, 'gamma')]
+The predicted class for this test example is alpha with the least ssd being 1218.0718
+And the sorted order of the ssds being [(1218.0718, 'alpha'), (1225.8298, 'alpha'), (1297.9861, 'alpha'), (1318.3754, 'beta'), (1320.9689, 'beta'), (1325.7136, 'alpha'), (1326.834, 'alpha'), (1327.7542, 'beta'), (1329.9807, 'gamma'), (1342.2771, 'beta'), (1344.871, 'alpha'), (1346.3511, 'alpha'), (1351.2736, 'beta'), (1352.1132, 'beta'), (1355.4512, 'gamma'), (1358.2692, 'alpha'), (1376.996, 'gamma'), (1378.7351, 'beta'), (1385.5261, 'gamma'), (1388.5593, 'gamma'), (1388.727, 'beta'), (1397.1155, 'alpha'), (1404.7112, 'beta'), (1404.8633, 'gamma'), (1404.8818, 'gamma'), (1448.8042, 'gamma'), (1449.3851, 'gamma')]
+The predicted class for this test example is beta with the least ssd being 272.33878
+And the sorted order of the ssds being [(272.33878, 'beta'), (272.67413, 'beta'), (281.6898, 'beta'), (313.5133, 'beta'), (316.18677, 'beta'), (330.94016, 'beta'), (345.341, 'beta'), (346.43585, 'beta'), (348.09937, 'alpha'), (350.1725, 'beta'), (357.75873, 'alpha'), (367.60162, 'alpha'), (369.27765, 'alpha'), (370.76117, 'alpha'), (375.26306, 'alpha'), (375.7703, 'alpha'), (385.52258, 'alpha'), (396.57697, 'gamma'), (405.57764, 'gamma'), (413.77908, 'gamma'), (436.289, 'alpha'), (437.33548, 'gamma'), (442.81848, 'gamma'), (445.11383, 'gamma'), (461.91, 'gamma'), (462.3432, 'gamma'), (473.48553, 'gamma')]
+The predicted class for this test example is beta with the least ssd being 1032.418
+And the sorted order of the ssds being [(1032.418, 'beta'), (1059.4359, 'gamma'), (1062.1442, 'beta'), (1065.81, 'beta'), (1066.6863, 'beta'), (1069.636, 'beta'), (1074.1743, 'gamma'), (1074.847, 'beta'), (1076.4106, 'beta'), (1088.9434, 'alpha'), (1091.1721, 'alpha'), (1095.7346, 'beta'), (1099.2477, 'beta'), (1101.9634, 'alpha'), (1112.0942, 'gamma'), (1116.1715, 'alpha'), (1116.1895, 'gamma'), (1121.4702, 'gamma'), (1124.0642, 'gamma'), (1126.6866, 'gamma'), (1133.6013, 'alpha'), (1136.6729, 'gamma'), (1136.7668, 'alpha'), (1140.7612, 'alpha'), (1159.3481, 'alpha'), (1163.9783, 'gamma'), (1202.3268, 'alpha')]
+The predicted class for this test example is gamma with the least ssd being 220.42996
+And the sorted order of the ssds being [(220.42996, 'gamma'), (225.51855, 'gamma'), (243.57407, 'alpha'), (249.32504, 'alpha'), (249.53116, 'gamma'), (258.696, 'beta'), (261.3225, 'beta'), (265.60406, 'gamma'), (266.0514, 'alpha'), (271.86835, 'beta'), (272.53302, 'gamma'), (275.41678, 'gamma'), (276.30127, 'alpha'), (281.3958, 'alpha'), (284.76147, 'beta'), (286.06674, 'beta'), (288.13477, 'alpha'), (289.25446, 'alpha'), (304.8319, 'gamma'), (306.31436, 'beta'), (308.18982, 'beta'), (308.5205, 'beta'), (308.7435, 'gamma'), (308.80328, 'alpha'), (313.65323, 'alpha'), (318.8186, 'gamma'), (339.6079, 'beta')]
+The predicted class for this test example is gamma with the least ssd being 105.69834
+And the sorted order of the ssds being [(105.69834, 'gamma'), (119.36495, 'gamma'), (122.23416, 'gamma'), (137.2319, 'gamma'), (139.03111, 'gamma'), (139.29636, 'beta'), (141.3153, 'beta'), (149.72977, 'gamma'), (156.49487, 'beta'), (159.18347, 'beta'), (171.75308, 'alpha'), (172.75218, 'alpha'), (174.93536, 'alpha'), (182.9768, 'gamma'), (183.9507, 'gamma'), (185.98401, 'beta'), (186.14864, 'beta'), (191.73547, 'beta'), (192.89806, 'alpha'), (201.1836, 'beta'), (202.1629, 'alpha'), (209.10052, 'alpha'), (209.74527, 'alpha'), (233.25987, 'alpha'), (238.52965, 'gamma'), (247.6221, 'beta'), (301.98044, 'alpha')]

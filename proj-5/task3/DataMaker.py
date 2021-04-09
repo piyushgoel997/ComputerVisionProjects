@@ -1,6 +1,6 @@
 # This file contains the code for part A of task 3, which is to create the csv files out of the data.
-# The way this code is written it'll work with any number of categories and any number of examples. Provided the files
-# have are following the naming convention category name followed by an underscore, the rest could be anything.
+# The way this code is written it'll work with any number of categories and any number of examples. Provided that the
+# files have are following the naming convention category name followed by an underscore, the rest could be anything.
 
 import os
 
@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 
 
+# This function does the main task of creating a pandas data frame given the path to the folder containing the greek
+# letter data.
 def create_dataframe_from_data(folder, invert=True):
     cat = []
     data = []

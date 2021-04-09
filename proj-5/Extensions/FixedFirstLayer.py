@@ -47,6 +47,7 @@ def plot_filters(model, layer_number=0):
     plt.show()
 
 
+# Copied from task 2
 def build_and_apply_truncated_model(model, images, layer_number=0, example_number=0):
     # D building a truncated model and applying it to the first layer
     first_layer_model = tf.keras.Model(inputs=model.input, outputs=model.get_layer(index=layer_number).output)
@@ -57,6 +58,14 @@ def build_and_apply_truncated_model(model, images, layer_number=0, example_numbe
         for j in range(4):
             axs[i, j].imshow(pred[0, :, :, 4 * i + j])
     plt.show()
+
+
+# Copied from task 1
+# This function prints the predicted class, the class probabilities (or the model output) and the correct classes.
+def print_predictions(mod, test_imgs, lbls):
+    for p, c, l in zip(mod.predict(test_imgs), mod.predict_classes(test_imgs), lbls):
+        pr = [round(x, 2) for x in p]
+        print("The predicted digit is", c, "with the class probabilities", pr, "and the correct digit", np.argmax(l))
 
 
 # train and test the model on the mnist dataset
@@ -130,12 +139,14 @@ def train_test_model(initializer, name, load_model=False):
     test_files_labels = list(range(10))
     test_files_labels = tf.keras.utils.to_categorical(test_files_labels, num_labels)
 
-    # evaluate the model on the handwritten test images
-    model.evaluate(test_files, test_files_labels)
-    print(model.predict_classes(test_files))
-
+    # plot filters and outputs
     plot_filters(model)
     build_and_apply_truncated_model(model, train_images)
+    build_and_apply_truncated_model(model, train_images, layer_number=2, example_number=10)
+
+    # evaluate the model on the handwritten test images
+    model.evaluate(test_files, test_files_labels)
+    print_predictions(model, test_files, test_files_labels)
 
 
 train_test_model(gabor_initializer, "gabor_model", load_model=True)
